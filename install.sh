@@ -63,9 +63,15 @@ fi
 
 install -m 0755 "$PKGDIR/bin/maid-suite.sh" "$BINDIR/maid-suite"
 [ -f "$PKGDIR/desktop/maid-suite.desktop" ] && install -m 0644 "$PKGDIR/desktop/maid-suite.desktop" "$APPS/maid-suite.desktop"
+mkdir -p "$SHARE/libexec"
+if [ -d "$PKGDIR/libexec" ]; then
+  cp -rf "$PKGDIR/libexec/." "$SHARE/libexec/" 2>/dev/null || true
+  chmod -R u+rwX,go+rX "$SHARE/libexec" 2>/dev/null || true
+  find "$SHARE/libexec" -type f \( -name '*.sh' -o -name 'maid-*' -o -name 'update-all.sh' \) -exec chmod 0755 {} + 2>/dev/null || true
+fi
 cp -f "$PKGDIR/README.md" "$PKGDIR/CHANGELOG.md" "$SHARE/" 2>/dev/null || true
 [ -d "$PKGDIR/docs" ] && cp -rf "$PKGDIR/docs" "$SHARE/" 2>/dev/null || true
-say "installed maid-suite -> $BINDIR/maid-suite"
+say "installed maid-suite -> $BINDIR/maid-suite (self-contained Helper + AU cores in $SHARE/libexec)"
 say "app menu entry -> $APPS/maid-suite.desktop (works in KDE Plasma and other desktops)"
 say "launch: maid-suite   (unified install/update/status for the Maidware tools)"
 

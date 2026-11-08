@@ -4,7 +4,18 @@
 set -u
 
 RAW_BASE="https://raw.githubusercontent.com/Maidware-Project"
-# registry: id|label|repo|marker_commands(space-sep, any = installed)
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
+# embedded cores (self-contained in Suite): prefer these over system copies
+for _lx in "$HERE/../libexec" "$HOME/.local/share/maid-suite/libexec"; do
+  [ -d "$_lx/helper" ] && EMBED_HELPER="$_lx/helper" && break
+done
+for _lx in "$HERE/../libexec" "$HOME/.local/share/maid-suite/libexec"; do
+  [ -d "$_lx/au" ] && EMBED_AU="$_lx/au" && break
+done
+EMBED_HELPER="${EMBED_HELPER:-}"
+EMBED_AU="${EMBED_AU:-}"
+
+# registry: id|label|repo|marker_commands(space-sep, any = installed as a separate tool)
 TOOLS=(
   "au|Maid AU (updates)|Maid-AU|update-all.sh"
   "helper|Maid Helper|Maid-Helper|maid-helper"
@@ -90,12 +101,13 @@ is_installed() {
 }
 
 status_line() {
-  local i=0 label markers
+  [ -n "$EMBED_HELPER" ] && ok "Maid Helper core (embedded in Suite)" || printf '  %b..%b Maid Helper core %b(not bundled)%b\n' "$D" "$R" "$D" "$R"
+  [ -n "$EMBED_AU" ] && ok "Maid AU updater core (embedded in Suite)" || printf '  %b..%b Maid AU updater core %b(not bundled)%b\n' "$D" "$R" "$D" "$R"
+  local label markers
   for rec in "${TOOLS[@]}"; do
     label="$(echo "$rec" | cut -d'|' -f2)"
     markers="$(echo "$rec" | cut -d'|' -f4)"
-    if is_installed "$markers"; then ok "$label"; else printf '  %b..%b %s %b(not detected)%b\n' "$D" "$R" "$label" "$D" "$R"; fi
-    i=$((i+1))
+    if is_installed "$markers"; then ok "$label (system)"; else printf '  %b..%b %s %b(not detected as separate tool)%b\n' "$D" "$R" "$label" "$D" "$R"; fi
   done
 }
 
@@ -162,17 +174,21 @@ menu() {
   printf '  %btype a number and press Enter · %bq%b cancels/back%b\n\n' "$D" "$B" "$D" "$R"
   printf '  %b1%b) install/update %ball%b tools (recommended)\n' "$B" "$R" "$B" "$R"
   printf '  %b2%b) install/update %bselected%b tools\n' "$B" "$R" "$B" "$R"
-  printf '  %b3%b) system %bcheck/fix%b (Maid Helper, if installed)\n' "$B" "$R" "$B" "$R"
-  printf '  %b4%b) run %bMaid AU%b updater (update-all.sh, if installed)\n' "$B" "$R" "$B" "$R"
+  printf '  %b3%b) system %bcheck/fix%b (Maid Helper core, embedded)\n' "$B" "$R" "$B" "$R"
+  printf '  %b4%b) run updater (Maid AU core, embedded)\n' "$B" "$R"
   printf '  %b5%b) doctor / status (what’s detected)\n' "$B" "$R"
   printf '  %b6%b) about + KDE Plasma / desktop options\n' "$B" "$R"
   printf '  %bq%b) quit\n\n' "$B" "$R"
   printf '  %b>%b ' "$B" "$R"
 }
 
-run_if_present() { # cmd label
+run_cmd() { # path-or-cmd label
   local cmd="$1" label="$2"
-  if command -v "$cmd" >/dev/null 2>&1; then
+  if [ -x "$cmd" ]; then
+    say "running $label ($cmd)"
+    "$cmd"
+    return $?
+  elif command -v "$cmd" >/dev/null 2>&1; then
     say "running $label ($cmd)"
     "$cmd"
     return $?
@@ -181,9 +197,13 @@ run_if_present() { # cmd label
     "$HOME/.local/bin/$cmd"
     return $?
   else
-    warn "$label is not installed here. Use option 1 or 2 to install it via Suite."
+    warn "$label is not available."
     return 1
   fi
+}
+
+run_if_present() { # cmd label (fallback helper)
+  run_cmd "$1" "$2"
 }
 
 maidware_boot
@@ -191,40 +211,46 @@ maidware_boot
 while true; do
   menu
   read -r choice || { echo; exit 0; }
+  [ -n "${choice:-}" ] && printf '\n  %bselected%b: %s\n' "$D" "$R" "$choice"
   case "${choice:-}" in
     1)
       echo; for rec in "${TOOLS[@]}"; do
         run_installer "$(echo "$rec"|cut -d'|' -f3)" "$(echo "$rec"|cut -d'|' -f2)" "install/update"; echo
       done
-      pause ;;
+      back_to_menu ;;
     2) do_install "install/update" ;;
     3)
       echo
-      if command -v maid-helper >/dev/null 2>&1 || [ -x "$HOME/.local/bin/maid-helper" ]; then
-        say "Maid Helper: runs its own checks/fixes (it will ask before changes)."
+      if [ -n "$EMBED_HELPER" ] && [ -x "$EMBED_HELPER/maid-helper" ]; then
+        say "Maid Helper (embedded in Suite): checks/fixes — it will ask before changes."
+        run_cmd "$EMBED_HELPER/maid-helper" "Maid Helper" || true
+      elif command -v maid-helper >/dev/null 2>&1 || [ -x "$HOME/.local/bin/maid-helper" ]; then
+        say "Maid Helper (system): checks/fixes — it will ask before changes."
         run_if_present "maid-helper" "Maid Helper" || true
       else
-        warn "Maid Helper not detected. Install it now via Suite? (y/N)"
-        read -r yn || yn=""; case "$yn" in [Yy]*) run_installer "Maid-Helper" "Maid Helper" "install" ;; esac
+        warn "Maid Helper not available. Install it via Suite (option 1/2) or reinstall Suite."
       fi
-      pause ;;
+      back_to_menu ;;
     4)
       echo
-      if command -v update-all.sh >/dev/null 2>&1 || [ -x "$HOME/.local/bin/update-all.sh" ]; then
-        say "Maid AU (update-all.sh): running its updater flow."
+      if [ -n "$EMBED_AU" ] && [ -x "$EMBED_AU/update-all.sh" ]; then
+        say "Maid AU updater (embedded in Suite): running update-all.sh."
+        run_cmd "$EMBED_AU/update-all.sh" "Maid AU updater" || true
+      elif command -v update-all.sh >/dev/null 2>&1 || [ -x "$HOME/.local/bin/update-all.sh" ]; then
+        say "Maid AU (system update-all.sh): running its updater flow."
         run_if_present "update-all.sh" "Maid AU updater" || true
       else
-        warn "Maid AU (update-all.sh) not detected. Suite option 1/2 can install/update everything in one place."
+        warn "Maid AU updater not available. Reinstall Suite to get the embedded core."
       fi
-      pause ;;
-    5) echo; hr; status_line; hr; pause ;;
+      back_to_menu ;;
+    5) echo; hr; status_line; hr; back_to_menu ;;
     6)
       echo
-      say "One place for Helper + AU style workflows + install/update of the whole Maidware set."
+      say "One place for Helper + AU core workflows (embedded, self-contained) + install/update of the whole Maidware set."
       say "KDE Plasma / desktops: installer adds a menu entry (maid-suite.desktop). Launch from your app menu or run: maid-suite"
-      say "Safe: official installers fetched over HTTPS, URLs shown. Non-interactive runs pass --no-packages to child installers."
+      say "Safe: embedded cores run locally; other tools use official installers fetched over HTTPS (URLs shown). Non-interactive runs pass --no-packages to child installers."
       say "Roadmap (compositor support, phone integration): docs/ROADMAP-2.md"
-      pause ;;
+      back_to_menu ;;
     q|Q|quit|exit|"") echo "  bye!"; exit 0 ;;
     *) warn "choose 1-6 or q" ;;
   esac
