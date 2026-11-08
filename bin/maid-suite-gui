@@ -2,17 +2,29 @@
 # Maid Suite GUI entry (PyQt6). Falls back with a clear message.
 set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"
-PKG="$HERE/../gui"
+
+find_gui_pkg() {
+  local c
+  for c in \
+    "$HERE/../gui" \
+    "$HERE/../share/maid-suite/gui" \
+    "${XDG_DATA_HOME:-$HOME/.local/share}/maid-suite/gui" \
+    "$HOME/.local/share/maid-suite/gui"; do
+    [ -d "$c/maid_suite_gui" ] && { printf '%s' "$c"; return 0; }
+  done
+  return 1
+}
 
 has_display() { [ -n "${WAYLAND_DISPLAY:-}" ] || [ -n "${DISPLAY:-}" ]; }
 has_pyqt() { python3 -c "import PyQt6" 2>/dev/null; }
 
-if [ -d "$PKG" ] && has_pyqt && has_display; then
+PKG="$(find_gui_pkg || true)"
+if [ -n "$PKG" ] && has_pyqt && has_display; then
   PYTHONPATH="$PKG${PYTHONPATH:+:$PYTHONPATH}" exec python3 -m maid_suite_gui "$@"
 fi
 
-if [ ! -d "$PKG" ]; then
-  echo "Maid Suite GUI: files missing under $PKG (reinstall Maid Suite)." >&2
+if [ -z "$PKG" ]; then
+  echo "Maid Suite GUI: files missing (looked in ../gui and ~/.local/share/maid-suite/gui). Reinstall Maid Suite." >&2
 elif ! has_pyqt; then
   echo "Maid Suite GUI needs PyQt6 (python3-pyqt6). Falling back: run 'maid-suite' (TUI)." >&2
   exec "$HERE/maid-suite" "$@" 2>/dev/null || exec maid-suite "$@"
