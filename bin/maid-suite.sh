@@ -22,7 +22,6 @@ TOOLS=(
   "runner|Maid Runner|Maid-Runner|maid-runner"
   "share|Maidshare|Maidshare|maidshare"
   "bt|Maid BT (Bluetooth)|Maid-BT|bluetooth-toggle.sh"
-  "setup|Maid Setup|Maid-Setup|maid-setup"
 )
 
 B="\033[1m"; D="\033[2m"; R="\033[0m"; G="\033[32m"; Y="\033[33m"; C="\033[36m"; CY="\033[96m"

@@ -452,7 +452,7 @@ appimage_links() {
 
 # ---- maid suite: the updater knows about its own family ----
 # Only Maid-family repos are tracked here (Maid BT, Maidshare, Maid Watcher,
-# Maid Helper, Maid Runner, Maid Setup), all under github.com/Maidware-Project.
+# Maid Helper, Maid Runner), all under github.com/Maidware-Project.
 # A checkout you already have is found by its github origin (so where it sits
 # on disk does not matter) and pulled --ff-only; one that is not on disk yet
 # is cloned from github into ~/.local/share/maid-au/suite. The Nuclear plugin
@@ -474,7 +474,6 @@ Maid BT|https://github.com/Maidware-Project/Maid-BT.git
 Maidshare|https://github.com/Maidware-Project/Maidshare.git
 Maid Helper|https://github.com/Maidware-Project/Maid-Helper.git
 Maid Runner|https://github.com/Maidware-Project/Maid-Runner.git
-Maid Setup|https://github.com/Maidware-Project/Maid-Setup.git
 LIST
 }
 
@@ -546,7 +545,7 @@ maidsuite_update() {
     say "maid suite: disabled (MAID_SUITE=0) - skipping."
     log "maid suite: skipped (MAID_SUITE=0)."; return 0
   fi
-  say "maid suite: enabled - pulling from github Maid BT, Maidshare, Maid Watcher, Maid Helper, Maid Runner, Maid Setup."
+  say "maid suite: enabled - pulling from github Maid BT, Maidshare, Maid Watcher, Maid Helper, Maid Runner."
   local line name url d behind before statline c changed=0
   while IFS= read -r line; do
     [ -n "$line" ] || continue
