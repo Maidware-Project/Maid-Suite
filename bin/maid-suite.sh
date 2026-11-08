@@ -35,10 +35,19 @@ maidware_boot() {
   [ "${MAID_FAST:-0}" = "1" ] && return 0
   term_size
   [ "$COLS" -ge 34 ] || return 0; [ "$ROWS" -ge 8 ] || return 0
-  local -a letters=(M A I D W A R E) rots=('|' '/' '-' $'\\') pal=("\033[94m" "\033[96m" "\033[92m" "\033[93m" "\033[95m")
-  local n=${#letters[@]} slot=3 pad=$(( (COLS - n*slot)/2 )); [ "$pad" -ge 0 ] || pad=0
-  local -a reveal=(); local i; for ((i=0;i<n;i++)); do reveal[i]=$((2+i)); done
-  local total=$((reveal[n-1]+2)) wordrow=$((ROWS/2 - 2)) f col glyph startcol
+  local -a letters=(M A I D W A R E)
+  local -a rots=('|' '/' '-' $'\\')
+  local -a pal=("\033[94m" "\033[96m" "\033[92m" "\033[93m" "\033[95m")
+  local n slot pad
+  n=${#letters[@]}; [ "${n:-0}" -ge 1 ] 2>/dev/null || return 0
+  slot=3
+  pad=$(( (COLS - n*slot)/2 )); [ "$pad" -ge 0 ] || pad=0
+  local -a reveal=()
+  local i
+  for ((i=0;i<n;i++)); do reveal[i]=$((2+i)); done
+  local total wordrow f col glyph startcol
+  total=$((reveal[n-1]+2))
+  wordrow=$((ROWS/2 - 2))
   printf '\033[?25l\033[0m'
   for ((f=0; f<total; f++)); do
     printf '\033[%d;1H\033[2K' "$wordrow"
