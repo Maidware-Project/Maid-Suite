@@ -41,12 +41,14 @@ term_size() {
 }
 
 maidware_boot() {
-  [ -t 0 ] && [ -t 1 ] || return 0
-  case "${TERM:-}" in ""|dumb|linux) return 0 ;; esac
+  [ -t 1 ] || return 0
+  case "${TERM:-}" in ""|linux) return 0 ;; esac
   [ -z "${NO_COLOR:-}" ] || return 0
   [ "${MAID_FAST:-0}" = "1" ] && return 0
   term_size
-  [ "$COLS" -ge 34 ] || return 0; [ "$ROWS" -ge 8 ] || return 0
+  [ "${ROWS:-0}" -ge 1 ] 2>/dev/null || ROWS=24
+  [ "${COLS:-0}" -ge 1 ] 2>/dev/null || COLS=80
+  [ "$COLS" -ge 34 ] || COLS=80; [ "$ROWS" -ge 8 ] || ROWS=24
   local -a letters=(M A I D W A R E)
   local -a rots=('|' '╱' '─' '╲')
   local -a pal=("\033[94m" "\033[96m" "\033[92m" "\033[93m" "\033[95m")
