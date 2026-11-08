@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Maid Suite
+GenericName=Maidware suite manager
+Comment=Install, update and check Maidware tools (Helper + AU in one place)
+Exec=maid-suite
+Icon=utilities-system-monitor
+Terminal=true
+Categories=System;Settings;Utility;
+Keywords=maidware;maid;update;helper;bluetooth;runner;share;
+StartupNotify=false
