@@ -30,6 +30,21 @@ say() { printf '  %b==>%b %s\n' "$C" "$R" "$*"; }
 warn() { printf '  %b!!%b %s\n' "$Y" "$R" "$*" >&2; }
 ok() { printf '  %bok%b %s\n' "$G" "$R" "$*"; }
 pause() { printf '\n  %bpress Enter to continue%b' "$D" "$R"; read -r _ || true; }
+is_nixos() {
+  [ "${MAID_SUITE_IMPERATIVE:-0}" = "1" ] && return 1
+  [ -e /etc/NIXOS ] && return 0
+  [ -d /nix/store ] && [ -n "${NIX_PATH:-}${IN_NIX_SHELL:-}" ] && return 0
+  return 1
+}
+nixos_install_hint() {
+  local repo="$1" label="$2"
+  warn "NixOS detected: use declarative install instead of curl|bash for $label"
+  printf '    flake/home-manager: input %s.url = "github:Maidware-Project/%s"; (tracks main)\n' "$repo" "$repo"
+  printf '    import homeManagerModules.default and enable programs.%s.enable = true;\n' "$(echo "$repo" | tr 'A-Z' 'a-z' | tr '_' '-')"
+  printf '    auto-update on rebuild: nix flake update %s && sudo nixos-rebuild switch --flake .#<host> --refresh\n' "$(echo "$repo" | tr 'A-Z' 'a-z' | tr '_' '-')"
+  printf '    (set MAID_SUITE_IMPERATIVE=1 only if you intentionally want the curl|bash installer)\n'
+}
+
 suite_tty_restore() { stty "${_SUITE_TTY:-}" 2>/dev/null </dev/tty || true; printf '\033[?25h' >&2; }
 
 term_size() {
@@ -162,6 +177,7 @@ pick_tools() {
 
 run_installer() {
   local repo="$1" label="$2" mode="$3" # mode: install|update (informational)
+  if is_nixos; then nixos_install_hint "$repo" "$label"; return 0; fi
   local url="$RAW_BASE/$repo/main/install.sh"
   say "$mode: $label (official installer)"
   printf '    %s\n' "$url"

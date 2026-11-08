@@ -57,14 +57,18 @@ clone-and-run: `git clone --depth 1 https://github.com/Maidware-Project/Maid-Sui
 
 ## NixOS (flakes & home-manager)
 
-a `flake.nix` is provided so Maid Suite can be used declaratively on NixOS:
+```nix
+# flake.nix (your config)
+inputs.maid-suite.url = "github:Maidware-Project/Maid-Suite"; # tracks main
 
-```sh
-nix run github:Maidware-Project/Maid-Suite
-# or: nix profile install github:Maidware-Project/Maid-Suite
+# home-manager
+imports = [ inputs.maid-suite.homeManagerModules.default ];
+programs.maid-suite.enable = true;
 ```
 
-home-manager (example): enable `programs.maid-suite.enable = true;` via the flake’s `homeManagerModules.default` (see `flake.nix`). on NixOS, prefer installing Maidware tools declaratively with flakes/home-manager; Suite’s imperative "fetch + run official installer" flow is most useful on non-Nix systems.
+**auto-update on every rebuild/switch:** track `main` and rebuild with refresh: `nix flake update maid-suite && home-manager switch --flake .#<user>` (or `sudo nixos-rebuild switch --flake .#<host> --refresh`).
+
+quick try: `nix run github:Maidware-Project/Maid-Suite`. on NixOS, install the other Maidware tools declaratively too (their flakes/home-manager modules); Suite detects NixOS and guides you instead of running unmanaged `curl|bash` installers.
 
 ## works with the Maid suite
 
