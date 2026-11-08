@@ -167,6 +167,18 @@ do_install() { # $1 = install|update
   pause
 }
 
+suite_installer_url() { echo "$RAW_BASE/Maid-Suite/main/install.sh"; }
+
+run_suite_installer() { # extra args...
+  local url; url="$(suite_installer_url)"
+  say "Maid Suite installer (official, HTTPS): $url"
+  if ! command -v curl >/dev/null 2>&1; then warn "curl not found"; return 1; fi
+  local tmp; tmp="$(mktemp /tmp/maid-suite-self.XXXXXX.sh)"
+  if ! curl -fsSL "$url" -o "$tmp"; then warn "fetch failed"; rm -f "$tmp"; return 1; fi
+  bash "$tmp" "$@"
+  local rc=$?; rm -f "$tmp"; return "$rc"
+}
+
 menu() {
   term_size
   printf '\n%bMaid Suite%b %b(Helper + AU + the whole set, one place)%b\n' "$B" "$R" "$D" "$R"
@@ -178,7 +190,10 @@ menu() {
   printf '  %b4%b) run updater (Maid AU core, embedded)\n' "$B" "$R"
   printf '  %b5%b) doctor / status (includes compositor/session)\n' "$B" "$R"
   printf '  %b6%b) phone discovery %b(experimental, read-only)%b\n' "$B" "$R" "$D" "$R"
-  printf '  %b7%b) about + KDE Plasma / desktop options\n' "$B" "$R"
+  printf '  %b7%b) %bupdate Suite%b from GitHub (self-update)\n' "$B" "$R" "$B" "$R"
+  printf '  %b8%b) %breinstall%b Suite (from GitHub)\n' "$B" "$R" "$B" "$R"
+  printf '  %b9%b) %buninstall%b Suite\n' "$B" "$R" "$B" "$R"
+  printf '  %b10%b) about + KDE Plasma / desktop options\n' "$B" "$R"
   printf '  %bq%b) quit\n\n' "$B" "$R"
   printf '  %b>%b ' "$B" "$R"
 }
@@ -230,7 +245,7 @@ maidware_boot
 while true; do
   menu
   read -r choice || { echo; exit 0; }
-  case "${choice:-}" in 1|2|3|4|5|6|7|q|Q|quit|exit) printf '  %b>%b %s\n' "$D" "$R" "${choice}" ;; esac
+  case "${choice:-}" in 1|2|3|4|5|6|7|8|9|10|q|Q|quit|exit) printf '  %b>%b %s\n' "$D" "$R" "${choice}" ;; esac
   case "${choice:-}" in
     1)
       echo; for rec in "${TOOLS[@]}"; do
@@ -275,12 +290,36 @@ while true; do
       back_to_menu ;;
     7)
       echo
+      say "Updating Maid Suite from GitHub (official installer)."
+      run_suite_installer || warn "Suite update failed"
+      say "Restart maid-suite if files changed."
+      back_to_menu ;;
+    8)
+      echo
+      say "Reinstalling Maid Suite from GitHub (official installer)."
+      run_suite_installer || warn "Suite reinstall failed"
+      say "Restart maid-suite if files changed."
+      back_to_menu ;;
+    9)
+      echo
+      printf '  %bUninstall Maid Suite?%b [y/N]: ' "$Y" "$R"
+      read -r _u || _u=""
+      case "${_u:-}" in
+        y|Y|yes|YES)
+          say "Uninstalling Maid Suite (official installer --uninstall)."
+          run_suite_installer --uninstall || warn "Suite uninstall reported an issue"
+          echo "  bye!"; exit 0 ;;
+        *) say "cancelled" ;;
+      esac
+      back_to_menu ;;
+    10)
+      echo
       say "One place for Helper + AU core workflows (embedded, self-contained) + install/update of the whole Maidware set."
       say "KDE Plasma / desktops: installer adds a menu entry (maid-suite.desktop). Launch from your app menu or run: maid-suite"
       say "Safe: embedded cores run locally; other tools use official installers fetched over HTTPS (URLs shown). Non-interactive runs pass --no-packages to child installers."
       say "Roadmap (compositor support, phone integration): docs/ROADMAP-2.md"
       back_to_menu ;;
     q|Q|quit|exit|"") echo "  bye!"; exit 0 ;;
-    *) warn "choose 1-7 or q" ;;
+    *) warn "choose 1-10 or q" ;;
   esac
 done
