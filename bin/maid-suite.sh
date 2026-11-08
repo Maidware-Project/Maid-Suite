@@ -24,12 +24,13 @@ TOOLS=(
   "bt|Maid BT (Bluetooth)|Maid-BT|bluetooth-toggle.sh"
 )
 
-B="\033[1m"; D="\033[2m"; R="\033[0m"; G="\033[32m"; Y="\033[33m"; C="\033[36m"
+B="\033[1m"; D="\033[2m"; R="\033[0m"; G="\033[32m"; Y="\033[33m"; C="\033[36m"; CY="\033[96m"
 hr() { printf '%*s\n' "${COLUMNS:-80}" '' | tr ' ' '-'; }
 say() { printf '  %b==>%b %s\n' "$C" "$R" "$*"; }
 warn() { printf '  %b!!%b %s\n' "$Y" "$R" "$*" >&2; }
 ok() { printf '  %bok%b %s\n' "$G" "$R" "$*"; }
 pause() { printf '\n  %bpress Enter to continue%b' "$D" "$R"; read -r _ || true; }
+suite_tty_restore() { stty "${_SUITE_TTY:-}" 2>/dev/null </dev/tty || true; printf '\033[?25h' >&2; }
 
 term_size() {
   local sz
@@ -47,7 +48,7 @@ maidware_boot() {
   term_size
   [ "$COLS" -ge 34 ] || return 0; [ "$ROWS" -ge 8 ] || return 0
   local -a letters=(M A I D W A R E)
-  local -a rots=('|' '/' '-' $'\\')
+  local -a rots=('|' '╱' '─' '╲')
   local -a pal=("\033[94m" "\033[96m" "\033[92m" "\033[93m" "\033[95m")
   local n slot pad
   n=${#letters[@]}; [ "${n:-0}" -ge 1 ] 2>/dev/null || return 0
@@ -60,6 +61,7 @@ maidware_boot() {
   total=$((reveal[n-1]+2))
   wordrow=$((ROWS/2 - 2))
   printf '\033[?25l\033[0m'
+  trap 'printf "\033[?25h\033[0m"' INT TERM
   for ((f=0; f<total; f++)); do
     printf '\033[%d;1H\033[2K' "$wordrow"
     for ((i=0;i<n;i++)); do
@@ -76,13 +78,14 @@ maidware_boot() {
         printf '\033[%d;%dH%s%s\033[0m' "$wordrow" "$col" "$glyph" "${letters[i]}"
       fi
     done
-    local k=""; read -t 0.07 -n 1 -s k 2>/dev/null || true
+    local k=""; read -t 0.08 -n 1 -s k 2>/dev/null || true
     if [ -n "${k:-}" ] && [ "$k" != $'\004' ] && [ "$k" != $'\000' ]; then break; fi
   done
   local word=""; for ((i=0;i<n;i++)); do word="$word ${letters[i]} "; done
   printf '\033[%d;1H\033[2K%*s\033[1;97m%s\033[0m' "$wordrow" "$pad" '' "$word"
   printf '\033[%d;1H\033[2K%*s\033[2mMaid Suite - install / update the whole set\033[0m' "$((wordrow+1))" "$(( (COLS-38)/2 ))" ''
-  sleep 0.4
+  sleep 0.45
+  trap - INT TERM
   printf '\033[?25h\033[0m\033[2J\033[H'
 }
 
@@ -112,26 +115,46 @@ status_line() {
 }
 
 pick_tools() {
-  # prints selected indices, one per line; empty = cancelled
-  local i=0 label markers mark
-  echo >&2; echo "  Select tools (examples: 1 3 5  or  1,3,5  or  a = all, q = back):" >&2
-  for rec in "${TOOLS[@]}"; do
-    i=$((i+1))
-    label="$(echo "$rec" | cut -d'|' -f2)"
-    markers="$(echo "$rec" | cut -d'|' -f4)"
-    mark=" "; is_installed "$markers" && mark="*"
-    printf '   %b%d%b) [%s] %s\n' "$B" "$i" "$R" "$mark" "$label" >&2
-  done
-  printf '  %b>%b ' "$B" "$R" >&2
-  local ans; read -r ans || return 0
-  case "${ans:-}" in q|Q|back|cancel|"") return 0 ;; a|A|all) for ((i=0;i<${#TOOLS[@]};i++)); do echo "$i"; done; return 0 ;; esac
-  # parse numbers
-  ans="$(echo "$ans" | tr ',' ' ')"
-  local n
-  for n in $ans; do
-    if [[ "$n" =~ ^[0-9]+$ ]] && [ "$n" -ge 1 ] && [ "$n" -le "${#TOOLS[@]}" ]; then
-      echo $((n-1))
-    fi
+  # prints selected indices (0-based), one per line, to stdout; empty = cancelled. UI to stderr.
+  local n=${#TOOLS[@]} cur=1 i label markers inst k seq
+  local -a sel=()
+  for ((i=0;i<n;i++)); do sel[i]=0; done
+  if [ ! -t 0 ] || [ ! -t 1 ]; then
+    echo >&2; echo "  Select tools (examples: 1 3 5  or  1,3,5  or  a = all, q = back):" >&2
+    i=0; for rec in "${TOOLS[@]}"; do i=$((i+1)); label="$(echo "$rec" | cut -d'|' -f2)"; markers="$(echo "$rec" | cut -d'|' -f4)"; inst=" "; is_installed "$markers" && inst="*"; printf '   %b%d%b) [%s] %s\n' "$B" "$i" "$R" "$inst" "$label" >&2; done
+    printf '  %b>%b ' "$B" "$R" >&2
+    local ans; read -r ans || return 0
+    case "${ans:-}" in q|Q|back|cancel|"") return 0 ;; a|A|all) for ((i=0;i<n;i++)); do echo "$i"; done; return 0 ;; esac
+    ans="$(echo "$ans" | tr ',' ' ')"; for x in $ans; do [[ "$x" =~ ^[0-9]+$ ]] && [ "$x" -ge 1 ] && [ "$x" -le "$n" ] && echo $((x-1)); done
+    return 0
+  fi
+  _SUITE_TTY=$(stty -g 2>/dev/null </dev/tty || true)
+  trap 'suite_tty_restore' INT TERM
+  stty -echo -icanon min 1 time 0 2>/dev/null </dev/tty || true
+  printf '\033[?25l\n\033[s' >&2
+  while :; do
+    printf '\033[u\033[J  %bSelect tools%b %b(↑↓ move · Space toggle · a all · Enter confirm · q back)%b\n' "$B" "$R" "$D" "$R" >&2
+    i=0
+    for rec in "${TOOLS[@]}"; do
+      i=$((i+1)); label="$(echo "$rec" | cut -d'|' -f2)"; markers="$(echo "$rec" | cut -d'|' -f4)"
+      inst=" "; is_installed "$markers" && inst="*"
+      local box=" "; [ "${sel[$((i-1))]}" = "1" ] && box="x"
+      if [ "$i" -eq "$cur" ]; then printf '  %b❯ [%s] %d) %s%b %b[%s]%b\033[K\n' "$CY$B" "$box" "$i" "$label" "$R" "$D" "$inst" "$R" >&2
+      else printf '    [%s] %b%d)%b %s %b[%s]%b\033[K\n' "$box" "$D" "$i" "$R" "$label" "$D" "$inst" "$R" >&2; fi
+    done
+    printf '  %b>%b selected: ' "$B" "$R" >&2
+    local any=0; for ((i=0;i<n;i++)); do [ "${sel[i]}" = "1" ] && { printf '%d ' "$((i+1))" >&2; any=1; }; done
+    [ "$any" -eq 0 ] && printf '%b(none)%b' "$D" "$R" >&2
+    printf '\033[K' >&2
+    IFS= read -rsn1 k </dev/tty 2>/dev/null || k=""
+    case "$k" in
+      $'\x1b') IFS= read -rsn2 -t 0.08 seq </dev/tty 2>/dev/null || seq=""; case "$seq" in '[A'|'OA') [ "$cur" -gt 1 ] && cur=$((cur-1));; '[B'|'OB') [ "$cur" -lt "$n" ] && cur=$((cur+1));; esac ;;
+      " ") [ "${sel[$((cur-1))]}" = "1" ] && sel[$((cur-1))]=0 || sel[$((cur-1))]=1 ;;
+      a|A) for ((i=0;i<n;i++)); do sel[i]=1; done ;;
+      ""|$'\n'|$'\r') suite_tty_restore; trap - INT TERM; printf '\n' >&2; for ((i=0;i<n;i++)); do [ "${sel[i]}" = "1" ] && echo "$i"; done; return 0 ;;
+      q|Q) suite_tty_restore; trap - INT TERM; printf '\n' >&2; return 0 ;;
+      [1-9]) if [ "$k" -le "$n" ] 2>/dev/null; then cur="$k"; [ "${sel[$((cur-1))]}" = "1" ] && sel[$((cur-1))]=0 || sel[$((cur-1))]=1; fi ;;
+    esac
   done
 }
 
@@ -179,23 +202,55 @@ run_suite_installer() { # extra args...
   local rc=$?; rm -f "$tmp"; return "$rc"
 }
 
-menu() {
+menu_draw() {
   term_size
-  printf '\n%bMaid Suite%b %b(Helper + AU + the whole set, one place)%b\n' "$B" "$R" "$D" "$R"
+  printf '\033[H\033[2J%bMaid Suite%b %b(Helper + AU + the whole set, one place)%b\n' "$B" "$R" "$D" "$R"
   hr
-  printf '  %btype a number and press Enter · %bq%b cancels/back%b\n\n' "$D" "$B" "$D" "$R"
-  printf '  %b1%b) install/update %ball%b tools (recommended)\n' "$B" "$R" "$B" "$R"
-  printf '  %b2%b) install/update %bselected%b tools\n' "$B" "$R" "$B" "$R"
-  printf '  %b3%b) system %bcheck/fix%b (Maid Helper core, embedded)\n' "$B" "$R" "$B" "$R"
-  printf '  %b4%b) run updater (Maid AU core, embedded)\n' "$B" "$R"
-  printf '  %b5%b) doctor / status (includes compositor/session)\n' "$B" "$R"
-  printf '  %b6%b) phone %b(discovery read-only / explicit adb connect)%b\n' "$B" "$R" "$D" "$R"
-  printf '  %b7%b) %bupdate Suite%b from GitHub (self-update)\n' "$B" "$R" "$B" "$R"
-  printf '  %b8%b) %breinstall%b Suite (from GitHub)\n' "$B" "$R" "$B" "$R"
-  printf '  %b9%b) %buninstall%b Suite\n' "$B" "$R" "$B" "$R"
-  printf '  %b10%b) about + KDE Plasma / desktop options\n' "$B" "$R"
-  printf '  %bq%b) quit\n\n' "$B" "$R"
-  printf '  %b>%b ' "$B" "$R"
+  printf '  %b↑↓/arrows or type number · Enter select · q quit%b\n\n' "$D" "$R"
+}
+
+menu_pick() {
+  local -a labels=(
+    "1) install/update all tools (recommended)"
+    "2) install/update selected tools"
+    "3) system check/fix (Maid Helper core, embedded)"
+    "4) run updater (Maid AU core, embedded)"
+    "5) doctor / status (includes compositor/session)"
+    "6) phone (discovery read-only / explicit adb connect)"
+    "7) update Suite from GitHub (self-update)"
+    "8) reinstall Suite (from GitHub)"
+    "9) uninstall Suite"
+    "10) about + KDE Plasma / desktop options"
+    "q) quit")
+  local n=${#labels[@]} cur=1 typed="" k seq i first=1
+  if [ ! -t 0 ] || [ ! -t 1 ]; then printf '  %b>%b ' "$B" "$R"; read -r choice || choice="q"; return 0; fi
+  _SUITE_TTY=$(stty -g 2>/dev/null </dev/tty || true)
+  trap 'suite_tty_restore' INT TERM
+  stty -echo -icanon min 1 time 0 2>/dev/null </dev/tty || true
+  printf '\033[?25l\n\033[s'
+  while :; do
+    printf '\033[u\033[J'
+    i=1
+    for it in "${labels[@]}"; do
+      if [ "$i" -eq "$cur" ]; then printf '  %b❯ %s%b\033[K\n' "$CY$B" "$it" "$R"
+      else printf '    %b%s%b\033[K\n' "$D" "$it" "$R"; fi
+      i=$((i+1))
+    done
+    printf '  %b>%b %s\033[K' "$B" "$R" "${typed}"
+    IFS= read -rsn1 k </dev/tty 2>/dev/null || k=""
+    case "$k" in
+      $'\x1b') IFS= read -rsn2 -t 0.08 seq </dev/tty 2>/dev/null || seq=""; case "$seq" in '[A'|'OA') [ "$cur" -gt 1 ] && cur=$((cur-1)); typed="" ;; '[B'|'OB') [ "$cur" -lt "$n" ] && cur=$((cur+1)); typed="" ;; esac ;;
+      ""|$'\n'|$'\r')
+        if [ -n "$typed" ] && [[ "$typed" =~ ^[0-9]+$ ]]; then
+          [ "$typed" -ge 1 ] && [ "$typed" -le 10 ] && cur="$typed"
+        fi
+        suite_tty_restore; trap - INT TERM; printf '\n'
+        [ "$cur" -eq 11 ] && choice="q" || choice="$cur"; return 0 ;;
+      q|Q) suite_tty_restore; trap - INT TERM; printf '\n'; choice="q"; return 0 ;;
+      [0-9]) typed="${typed}${k}"; if [[ "$typed" =~ ^[0-9]+$ ]] && [ "$typed" -ge 1 ] && [ "$typed" -le 10 ]; then cur="$typed"; elif [ "$typed" = "11" ] 2>/dev/null; then cur=11; fi ;;
+      $'\x7f'|$'\b') typed="${typed%?}" ;;
+    esac
+  done
 }
 
 run_cmd() { # path-or-cmd label
@@ -243,8 +298,8 @@ run_if_present() { # cmd label (fallback helper)
 maidware_boot
 
 while true; do
-  menu
-  read -r choice || { echo; exit 0; }
+  menu_draw
+  menu_pick
   case "${choice:-}" in 1|2|3|4|5|6|7|8|9|10|q|Q|quit|exit) printf '  %b>%b %s\n' "$D" "$R" "${choice}" ;; esac
   case "${choice:-}" in
     1)
