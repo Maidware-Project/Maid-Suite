@@ -202,6 +202,9 @@ run_cmd() { # path-or-cmd label
   fi
 }
 
+# consistent return-to-menu (a proper TUI loop)
+back_to_menu() { printf '\n  %bpress Enter to return to menu%b' "$D" "$R"; read -r _ || true; }
+
 run_if_present() { # cmd label (fallback helper)
   run_cmd "$1" "$2"
 }
