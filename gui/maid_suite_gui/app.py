@@ -97,16 +97,20 @@ class MainWindow(QMainWindow):
 
         row1 = QHBoxLayout(); lay.addLayout(row1)
         row2 = QHBoxLayout(); lay.addLayout(row2)
+        row3 = QHBoxLayout(); lay.addLayout(row3)
 
         def btn(label, fn, row=row1):
             b = QPushButton(label); b.clicked.connect(fn); row.addWidget(b); return b
 
-        btn("Open TUI (terminal)", self.open_tui)
-        btn("Helper check/fix (terminal)", self.run_helper)
-        btn("AU updater (terminal)", self.run_au)
-        btn("Doctor / status", self.doctor, row2)
-        btn("Compositor/session info", self.session_info, row2)
-        btn("About", self.about, row2)
+        # same menu/actions as the TUI (kept in sync)
+        btn("1) Install/update all tools", self.install_all)
+        btn("2) Install/update selected (TUI)", self.open_tui_select)
+        btn("3) Helper check/fix (terminal)", self.run_helper, row2)
+        btn("4) AU updater (terminal)", self.run_au, row2)
+        btn("5) Doctor / status", self.doctor, row2)
+        btn("6) Phone discovery (read-only)", self.phone_discovery, row3)
+        btn("7) About / Plasma options", self.about, row3)
+        btn("Open full TUI", self.open_tui, row3)
 
         self.statusBar().showMessage("Ready")
         self.doctor()
@@ -121,6 +125,35 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Maid Suite", "Could not find a terminal emulator. Run: maid-suite")
         else:
             self.append("opened TUI in a terminal")
+
+    def install_all(self):
+        # safest to run the interactive/unified flow in a terminal
+        tui = _find_bin("maid-suite")
+        cmd = f"echo 'Maid Suite — install/update ALL tools (official installers).'; echo 'Tip: choose option 1 in the menu.'; echo; {shlex.quote(tui)}; echo; read -r -p 'Press Enter to close...'"
+        if not terminal_run(cmd):
+            QMessageBox.warning(self, "Maid Suite", "Could not open a terminal. Run: maid-suite")
+        else:
+            self.append("install/update all — opened in terminal (TUI)")
+
+    def open_tui_select(self):
+        tui = _find_bin("maid-suite")
+        cmd = f"echo 'Maid Suite — choose option 2 to install/update selected tools.'; echo; {shlex.quote(tui)}; echo; read -r -p 'Press Enter to close...'"
+        if not terminal_run(cmd):
+            QMessageBox.warning(self, "Maid Suite", "Could not open a terminal. Run: maid-suite")
+        else:
+            self.append("install/update selected — opened in terminal (TUI)")
+
+    def phone_discovery(self):
+        for base in CANDIDATE_LIBEXEC:
+            p = os.path.join(base, "phone", "adb-discovery.sh")
+            if os.path.isfile(p) and os.access(p, os.X_OK):
+                try:
+                    out = subprocess.check_output(["bash", p], stderr=subprocess.STDOUT, text=True, timeout=15)
+                except Exception as e:
+                    out = f"(could not run discovery: {e})"
+                self.append("== phone discovery (read-only) ==\n" + out)
+                return
+        self.append("phone discovery helper not found (reinstall Maid Suite).")
 
     def run_helper(self):
         h = _find("maid-helper", "helper")
