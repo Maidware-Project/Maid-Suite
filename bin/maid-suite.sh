@@ -283,9 +283,9 @@ compositor_doctor() {
   printf '  desktop=%s session=%s wayland=%s x11=%s\n' "${desk:-n/a}" "${sess:-n/a}" "${wl:+yes}" "${x11:+yes}"
   case "${desk,,} ${sess,,}" in
     *plasma*|*kde*) ok "KDE Plasma: supported path for KDE-specific features (widgets/plasmoids)" ;;
-    *hyprland*) printf '  %b..%b Hyprland: CLI/TUI tools work; Plasma widgets are KDE-only — compositor adapters are roadmap (partial/experimental)\n' "$D" "$R" ;;
-    *sway*) printf '  %b..%b Sway: CLI/TUI tools work; Plasma widgets are KDE-only — adapters roadmap (partial/experimental)\n' "$D" "$R" ;;
-    *i3*) printf '  %b..%b i3: CLI/TUI tools work; Plasma widgets are KDE-only — adapters roadmap (partial/experimental)\n' "$D" "$R" ;;
+    *hyprland*) printf '  %b..%b Hyprland: CLI/TUI tools work; Plasma widgets are KDE-only — adapters partial/experimental (iterative)\n' "$D" "$R" ;;
+    *sway*) printf '  %b..%b Sway: CLI/TUI tools work; Plasma widgets are KDE-only — adapters partial/experimental (iterative)\n' "$D" "$R" ;;
+    *i3*) printf '  %b..%b i3: CLI/TUI tools work; Plasma widgets are KDE-only — adapters partial/experimental (iterative)\n' "$D" "$R" ;;
     *) printf '  %b..%b other/unknown session: core CLI/TUI expected to work; desktop integration varies\n' "$D" "$R" ;;
   esac
   say "Maid BT: Plasma plasmoid is KDE-only; CLI (bluetooth-toggle, maid-switch) works broadly. Maid Runner: Qt app (needs display)."

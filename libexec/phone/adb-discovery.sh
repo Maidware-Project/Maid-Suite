@@ -12,4 +12,4 @@ fi
 adb start-server >/dev/null 2>&1 || true
 adb devices -l 2>&1 || true
 echo
-say "Tip: this is a discovery slice for the phone-integration roadmap (no APK goal). It never runs shell commands on devices."
+say "Tip: this is a discovery slice for phone integration (no APK goal, iterative). It never runs shell commands on devices."
