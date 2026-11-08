@@ -189,7 +189,7 @@ menu() {
   printf '  %b3%b) system %bcheck/fix%b (Maid Helper core, embedded)\n' "$B" "$R" "$B" "$R"
   printf '  %b4%b) run updater (Maid AU core, embedded)\n' "$B" "$R"
   printf '  %b5%b) doctor / status (includes compositor/session)\n' "$B" "$R"
-  printf '  %b6%b) phone discovery %b(experimental, read-only)%b\n' "$B" "$R" "$D" "$R"
+  printf '  %b6%b) phone %b(discovery read-only / explicit adb connect)%b\n' "$B" "$R" "$D" "$R"
   printf '  %b7%b) %bupdate Suite%b from GitHub (self-update)\n' "$B" "$R" "$B" "$R"
   printf '  %b8%b) %breinstall%b Suite (from GitHub)\n' "$B" "$R" "$B" "$R"
   printf '  %b9%b) %buninstall%b Suite\n' "$B" "$R" "$B" "$R"
@@ -280,13 +280,15 @@ while true; do
     5) echo; hr; status_line; compositor_doctor; hr; back_to_menu ;;
     6)
       echo
-      if [ -x "$HERE/../libexec/phone/adb-discovery.sh" ]; then
-        bash "$HERE/../libexec/phone/adb-discovery.sh"
-      elif [ -x "$HOME/.local/share/maid-suite/libexec/phone/adb-discovery.sh" ]; then
-        bash "$HOME/.local/share/maid-suite/libexec/phone/adb-discovery.sh"
-      else
-        warn "ADB discovery helper not bundled; reinstall Suite."
-      fi
+      printf '  %b1%b) ADB discovery (read-only)  %b2%b) ADB connect over Wi-Fi (explicit consent)  %bq%b) back\n  %b>%b ' "$B" "$R" "$B" "$R" "$B" "$R" "$B" "$R"
+      read -r _ph || _ph=""
+      _px=""
+      if [ -x "$HERE/../libexec/phone" ]; then _px="$HERE/../libexec/phone"
+      elif [ -x "$HOME/.local/share/maid-suite/libexec/phone" ]; then _px="$HOME/.local/share/maid-suite/libexec/phone"; fi
+      case "${_ph:-}" in
+        1) [ -n "$_px" ] && bash "$_px/adb-discovery.sh" || warn "phone helpers not bundled; reinstall Suite." ;;
+        2) [ -n "$_px" ] && bash "$_px/adb-connect.sh" || warn "phone helpers not bundled; reinstall Suite." ;;
+      esac
       back_to_menu ;;
     7)
       echo
@@ -316,8 +318,8 @@ while true; do
       echo
       say "One place for Helper + AU core workflows (embedded, self-contained) + install/update of the whole Maidware set."
       say "KDE Plasma / desktops: installer adds a menu entry (maid-suite.desktop). Launch from your app menu or run: maid-suite"
+      say "Compositor support: session/compositor detection + doctor shipped (Plasma supported; Hyprland/Sway/i3 = core CLI/TUI, Plasma widgets KDE-only, adapters partial/experimental). Phone: read-only ADB discovery + explicit-consent adb connect helper shipped; deeper integration is iterative and security-first."
       say "Safe: embedded cores run locally; other tools use official installers fetched over HTTPS (URLs shown). Non-interactive runs pass --no-packages to child installers."
-      say "Roadmap (compositor support, phone integration): docs/ROADMAP-2.md"
       back_to_menu ;;
     q|Q|quit|exit|"") echo "  bye!"; exit 0 ;;
     *) warn "choose 1-10 or q" ;;
