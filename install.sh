@@ -54,25 +54,27 @@ if [ "$UNINST" = "1" ]; then
 fi
 
 if [ "$CHECK" = "1" ]; then
-  echo "COPY $BINDIR/maid-suite"
+  echo "COPY $BINDIR/maid-suite $BINDIR/maid-suite-gui"
   echo "COPY $APPS/maid-suite.desktop (KDE Plasma / app menu)"
-  echo "COPY $SHARE (docs)"
+  echo "COPY $SHARE (docs, libexec, gui)"
   echo "==> (check only, nothing changed)"
   exit 0
 fi
 
 install -m 0755 "$PKGDIR/bin/maid-suite.sh" "$BINDIR/maid-suite"
+[ -f "$PKGDIR/bin/maid-suite-gui" ] && install -m 0755 "$PKGDIR/bin/maid-suite-gui" "$BINDIR/maid-suite-gui"
 [ -f "$PKGDIR/desktop/maid-suite.desktop" ] && install -m 0644 "$PKGDIR/desktop/maid-suite.desktop" "$APPS/maid-suite.desktop"
-mkdir -p "$SHARE/libexec"
+mkdir -p "$SHARE/libexec" "$SHARE/gui"
 if [ -d "$PKGDIR/libexec" ]; then
   cp -rf "$PKGDIR/libexec/." "$SHARE/libexec/" 2>/dev/null || true
   chmod -R u+rwX,go+rX "$SHARE/libexec" 2>/dev/null || true
   find "$SHARE/libexec" -type f \( -name '*.sh' -o -name 'maid-*' -o -name 'update-all.sh' \) -exec chmod 0755 {} + 2>/dev/null || true
 fi
+[ -d "$PKGDIR/gui" ] && cp -rf "$PKGDIR/gui/." "$SHARE/gui/" 2>/dev/null || true
 cp -f "$PKGDIR/README.md" "$PKGDIR/CHANGELOG.md" "$SHARE/" 2>/dev/null || true
 [ -d "$PKGDIR/docs" ] && cp -rf "$PKGDIR/docs" "$SHARE/" 2>/dev/null || true
-say "installed maid-suite -> $BINDIR/maid-suite (self-contained Helper + AU cores in $SHARE/libexec)"
-say "app menu entry -> $APPS/maid-suite.desktop (works in KDE Plasma and other desktops)"
+say "installed maid-suite (TUI) + maid-suite-gui (native Qt/KDE Plasma GUI) -> $BINDIR"
+say "app menu entry -> $APPS/maid-suite.desktop"
 say "launch: maid-suite   (unified install/update/status for the Maidware tools)"
 
 if [ "$TUI" = "1" ]; then

@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Maid Suite GUI entry (PyQt6). Falls back with a clear message.
+set -u
+HERE="$(cd "$(dirname "$0")" && pwd)"
+PKG="$HERE/../gui"
+
+has_display() { [ -n "${WAYLAND_DISPLAY:-}" ] || [ -n "${DISPLAY:-}" ]; }
+has_pyqt() { python3 -c "import PyQt6" 2>/dev/null; }
+
+if [ -d "$PKG" ] && has_pyqt && has_display; then
+  PYTHONPATH="$PKG${PYTHONPATH:+:$PYTHONPATH}" exec python3 -m maid_suite_gui "$@"
+fi
+
+if [ ! -d "$PKG" ]; then
+  echo "Maid Suite GUI: files missing under $PKG (reinstall Maid Suite)." >&2
+elif ! has_pyqt; then
+  echo "Maid Suite GUI needs PyQt6 (python3-pyqt6). Falling back: run 'maid-suite' (TUI)." >&2
+  exec "$HERE/maid-suite" "$@" 2>/dev/null || exec maid-suite "$@"
+else
+  echo "Maid Suite GUI needs a display (Wayland/X11). Use: maid-suite" >&2
+fi
+exit 2

@@ -176,8 +176,9 @@ menu() {
   printf '  %b2%b) install/update %bselected%b tools\n' "$B" "$R" "$B" "$R"
   printf '  %b3%b) system %bcheck/fix%b (Maid Helper core, embedded)\n' "$B" "$R" "$B" "$R"
   printf '  %b4%b) run updater (Maid AU core, embedded)\n' "$B" "$R"
-  printf '  %b5%b) doctor / status (what’s detected)\n' "$B" "$R"
-  printf '  %b6%b) about + KDE Plasma / desktop options\n' "$B" "$R"
+  printf '  %b5%b) doctor / status (includes compositor/session)\n' "$B" "$R"
+  printf '  %b6%b) phone discovery %b(experimental, read-only)%b\n' "$B" "$R" "$D" "$R"
+  printf '  %b7%b) about + KDE Plasma / desktop options\n' "$B" "$R"
   printf '  %bq%b) quit\n\n' "$B" "$R"
   printf '  %b>%b ' "$B" "$R"
 }
@@ -203,7 +204,22 @@ run_cmd() { # path-or-cmd label
 }
 
 # consistent return-to-menu (a proper TUI loop)
-back_to_menu() { printf '\n  %bpress Enter to return to menu%b' "$D" "$R"; read -r _ || true; }
+back_to_menu() { printf '\n  %b[Enter]%b menu  ' "$D" "$R"; read -r _ || true; }
+
+compositor_doctor() {
+  local desk="${XDG_CURRENT_DESKTOP:-}" sess="${XDG_SESSION_DESKTOP:-}" wl="${WAYLAND_DISPLAY:-}" x11="${DISPLAY:-}"
+  echo
+  say "session/compositor (truthful, best-effort)"
+  printf '  desktop=%s session=%s wayland=%s x11=%s\n' "${desk:-n/a}" "${sess:-n/a}" "${wl:+yes}" "${x11:+yes}"
+  case "${desk,,} ${sess,,}" in
+    *plasma*|*kde*) ok "KDE Plasma: supported path for KDE-specific features (widgets/plasmoids)" ;;
+    *hyprland*) printf '  %b..%b Hyprland: CLI/TUI tools work; Plasma widgets are KDE-only — compositor adapters are roadmap (partial/experimental)\n' "$D" "$R" ;;
+    *sway*) printf '  %b..%b Sway: CLI/TUI tools work; Plasma widgets are KDE-only — adapters roadmap (partial/experimental)\n' "$D" "$R" ;;
+    *i3*) printf '  %b..%b i3: CLI/TUI tools work; Plasma widgets are KDE-only — adapters roadmap (partial/experimental)\n' "$D" "$R" ;;
+    *) printf '  %b..%b other/unknown session: core CLI/TUI expected to work; desktop integration varies\n' "$D" "$R" ;;
+  esac
+  say "Maid BT: Plasma plasmoid is KDE-only; CLI (bluetooth-toggle, maid-switch) works broadly. Maid Runner: Qt app (needs display)."
+}
 
 run_if_present() { # cmd label (fallback helper)
   run_cmd "$1" "$2"
@@ -214,7 +230,7 @@ maidware_boot
 while true; do
   menu
   read -r choice || { echo; exit 0; }
-  [ -n "${choice:-}" ] && printf '\n  %bselected%b: %s\n' "$D" "$R" "$choice"
+  case "${choice:-}" in 1|2|3|4|5|6|7|q|Q|quit|exit) printf '  %b>%b %s\n' "$D" "$R" "${choice}" ;; esac
   case "${choice:-}" in
     1)
       echo; for rec in "${TOOLS[@]}"; do
@@ -246,8 +262,18 @@ while true; do
         warn "Maid AU updater not available. Reinstall Suite to get the embedded core."
       fi
       back_to_menu ;;
-    5) echo; hr; status_line; hr; back_to_menu ;;
+    5) echo; hr; status_line; compositor_doctor; hr; back_to_menu ;;
     6)
+      echo
+      if [ -x "$HERE/../libexec/phone/adb-discovery.sh" ]; then
+        bash "$HERE/../libexec/phone/adb-discovery.sh"
+      elif [ -x "$HOME/.local/share/maid-suite/libexec/phone/adb-discovery.sh" ]; then
+        bash "$HOME/.local/share/maid-suite/libexec/phone/adb-discovery.sh"
+      else
+        warn "ADB discovery helper not bundled; reinstall Suite."
+      fi
+      back_to_menu ;;
+    7)
       echo
       say "One place for Helper + AU core workflows (embedded, self-contained) + install/update of the whole Maidware set."
       say "KDE Plasma / desktops: installer adds a menu entry (maid-suite.desktop). Launch from your app menu or run: maid-suite"
@@ -255,6 +281,6 @@ while true; do
       say "Roadmap (compositor support, phone integration): docs/ROADMAP-2.md"
       back_to_menu ;;
     q|Q|quit|exit|"") echo "  bye!"; exit 0 ;;
-    *) warn "choose 1-6 or q" ;;
+    *) warn "choose 1-7 or q" ;;
   esac
 done
