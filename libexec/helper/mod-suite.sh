@@ -53,6 +53,13 @@ else
   miss "Maidshare not installed" "cd ~/Documents/GitHub/Maidshare && bash install.sh"
 fi
 
+# --- Maid Setup: wizard entry present (foundational) ---
+if [ -x "$HOME/.local/bin/maid-setup" ] || command -v maid-setup >/dev/null 2>&1; then
+  echo "ok - Maid Setup installed"
+else
+  echo "skip - Maid Setup not installed (optional; post-install wizard, in progress)"
+fi
+
 # --- Maid Watcher: daemon + real MACs configured ---
 if [ -x "$HOME/.local/bin/maid-watcher" ]; then
   if grep -q "AA:BB:CC:DD:EE:FF" "$HOME/.config/maid-watcher/config.json" 2>/dev/null; then

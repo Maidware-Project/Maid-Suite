@@ -32,7 +32,7 @@ curl -fsSL https://raw.githubusercontent.com/Maidware-Project/Maid-Suite/main/in
 
 ## what it does
 
-- **install/update all** (recommended) or **selected** tools: Maid AU core, Maid Helper core, Maid Runner, Maidshare, Maid BT.
+- **install/update all** (recommended) or **selected** tools: Maid AU core, Maid Helper core, Maid Runner, Maidshare, Maid BT, Maid Setup.
 - **doctor/status**: detects what’s on your system (command markers) and reports compositor/session info truthfully (Plasma supported; other compositors use the core CLI/TUI paths where applicable).
 - **embedded cores, canonical front end**: Maid Suite is the recommended, all-in-one front end. the standalone Maid Helper and Maid AU repos are archived; their cores live here in `libexec/` (GPL-3.0-or-later, behavior preserved).
 - **easy navigation**: type a number and press Enter · `q` cancels/back. the TUI and GUI expose the same actions.
@@ -57,7 +57,7 @@ clone-and-run: `git clone --depth 1 https://github.com/Maidware-Project/Maid-Sui
 
 ## works with the Maid suite
 
-Maid Suite *is* the suite front end. it stands alone as the canonical place to run Helper/AU core workflows and to install/update the other independent Maidware tools (Maid BT, Maid Runner, Maidshare). each tool remains independent and keeps its own installer, behavior, and credits.
+Maid Suite *is* the suite front end. it stands alone as the canonical place to run Helper/AU core workflows and to install/update the other independent Maidware tools (Maid BT, Maid Runner, Maidshare, Maid Setup). each tool remains independent and keeps its own installer, behavior, and credits.
 
 ## License
 
