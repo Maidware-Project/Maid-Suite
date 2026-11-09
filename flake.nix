@@ -34,6 +34,9 @@
                 makeWrapper $out/share/maid-suite/bin/maid-suite-gui $out/bin/maid-suite-gui --prefix PATH : ${runtimePath}:${py}/bin --set PYTHONPATH $out/share/maid-suite/gui
               fi
               [ -d desktop ] && cp -a desktop/*.desktop $out/share/applications/ 2>/dev/null || true
+              find $out/share/applications -name '*.desktop' -type f 2>/dev/null | while IFS= read -r f; do
+                sed -i "s|@HOME@/.local/bin/||g; s|@HOME@|$HOME|g" "$f"
+              done
               cp -a README.md LICENSE THIRD-PARTY-NOTICES.md $out/share/maid-suite/ 2>/dev/null || true
               runHook postInstall
             '';
