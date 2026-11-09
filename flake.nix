@@ -21,6 +21,7 @@
             version = "0.1.0";
             src = self;
             nativeBuildInputs = [ pkgs.makeWrapper pkgs.qt6.wrapQtAppsHook ];
+            buildInputs = [ pkgs.qt6.qtbase ];
             dontBuild = true;
             installPhase = ''
               runHook preInstall
@@ -54,10 +55,11 @@
       homeManagerModules.default = { config, lib, pkgs, ... }: {
         options.programs.maid-suite = {
           enable = lib.mkEnableOption "Maid Suite (Maidware)";
-          package = lib.mkOption { type = lib.types.package; default = self.packages.${pkgs.system}.default; };
+          package = lib.mkOption { type = lib.types.package; default = self.packages.${pkgs.stdenv.hostPlatform.system}.default; };
         };
         config = lib.mkIf config.programs.maid-suite.enable { home.packages = [ config.programs.maid-suite.package ]; };
       };
+      homeModules = self.homeManagerModules;
       nixosModules.default = { lib, ... }: { options.programs.maid-suite.enableNote = lib.mkEnableOption "Maid Suite (use home-manager module)"; };
     };
 }
