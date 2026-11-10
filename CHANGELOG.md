@@ -1,6 +1,11 @@
 # changelog
 
-## Maid Suite v1.0.0 (this release)
+## Maid Suite v1.0.1 (this release)
+
+- Installers: fetch package/updates from the latest GitHub release (fallback to main if unavailable).
+- Suite: install/update individual tools from each tool's latest GitHub release instead of main.
+
+## Maid Suite v1.0.0
 
 - **NixOS (flakes + home-manager), easy setup:** `flake.nix` with packages/apps (`default`, `#gui`), `homeManagerModules.default`/`nixosModules.default`, and `programs.maid-suite.enable`. track `main` and rebuild with `--refresh` to auto-update on every rebuild/switch.
 - **NixOS-aware:** detects NixOS and gives declarative install guidance (no unmanaged `curl|bash` installers) for managed tools.

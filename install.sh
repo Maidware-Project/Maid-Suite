@@ -4,7 +4,8 @@
 # Piped install: bash <(curl -fsSL https://raw.githubusercontent.com/Maidware-Project/Maid-Suite/main/install.sh)
 set -u
 
-REPO_RAW="https://raw.githubusercontent.com/Maidware-Project/Maid-Suite/main"
+REPO="Maidware-Project/Maid-Suite"
+REPO_RAW="https://raw.githubusercontent.com/$REPO/main"
 
 # piped-fetch fallback: when run as a stream (no local tree), fetch the repo
 SCRIPT_PATH="${BASH_SOURCE[0]:-$0}"
@@ -17,7 +18,13 @@ trap cleanup EXIT
 if [ ! -f "$PKGDIR/bin/maid-suite.sh" ]; then
   if command -v curl >/dev/null 2>&1; then
     FETCH_TMP="$(mktemp -d /tmp/maidsuite-fetch.XXXXXX)"
-    curl -fsSL "https://codeload.github.com/Maidware-Project/Maid-Suite/tar.gz/refs/heads/main" \
+    LATEST_TAG="$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" 2>/dev/null | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)"
+    if [ -n "$LATEST_TAG" ]; then
+      TARBALL_URL="https://codeload.github.com/$REPO/tar.gz/refs/tags/$LATEST_TAG"
+    else
+      TARBALL_URL="https://codeload.github.com/$REPO/tar.gz/refs/heads/main"
+    fi
+    curl -fsSL "$TARBALL_URL" \
       | tar -xz -C "$FETCH_TMP" || { echo "fetch failed" >&2; exit 1; }
     PKGDIR="$(find "$FETCH_TMP" -mindepth 1 -maxdepth 1 -type d -name 'Maid-Suite-*' | head -n 1)"
     [ -f "$PKGDIR/bin/maid-suite.sh" ] || { echo "downloaded tree looks wrong" >&2; exit 1; }

@@ -175,10 +175,26 @@ pick_tools() {
   done
 }
 
+latest_release_tag() {
+  local repo="$1"
+  curl -fsSL "https://api.github.com/repos/Maidware-Project/$repo/releases/latest" 2>/dev/null \
+    | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1
+}
+
+installer_url_for_repo() {
+  local repo="$1" tag
+  tag="$(latest_release_tag "$repo")"
+  if [ -n "$tag" ]; then
+    echo "$RAW_BASE/$repo/$tag/install.sh"
+  else
+    echo "$RAW_BASE/$repo/main/install.sh"
+  fi
+}
+
 run_installer() {
   local repo="$1" label="$2" mode="$3" # mode: install|update (informational)
   if is_nixos; then nixos_install_hint "$repo" "$label"; return 0; fi
-  local url="$RAW_BASE/$repo/main/install.sh"
+  local url; url="$(installer_url_for_repo "$repo")"
   say "$mode: $label (official installer)"
   printf '    %s\n' "$url"
   if ! command -v curl >/dev/null 2>&1; then warn "curl not found; cannot fetch $label"; return 1; fi
@@ -208,7 +224,7 @@ do_install() { # $1 = install|update
   pause
 }
 
-suite_installer_url() { echo "$RAW_BASE/Maid-Suite/main/install.sh"; }
+suite_installer_url() { installer_url_for_repo "Maid-Suite"; }
 
 run_suite_installer() { # extra args...
   local url; url="$(suite_installer_url)"
