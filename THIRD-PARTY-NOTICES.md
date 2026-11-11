@@ -21,4 +21,10 @@ Maid Suite orchestrates or invokes tools your system/distribution provides (it d
 ## Referenced (documentation/roadmap), not bundled
 - **KDE Connect**, **Android/ADB documentation**, and [Tasker Permissions](https://github.com/joaomgcd/Tasker-Permissions) (Apache-2.0) are referenced for workflows/guidance; no code from them is bundled.
 
+## Recognized desktop environments/shells (not bundled)
+Maid Suite detects and reports session/DE/WM support for common Linux environments; core tools work broadly while some integrations are environment-specific.
+- **KDE Plasma / KWin**, **GNOME**, **XFCE**, **MATE**, **Cinnamon**, **LXQt**, **Hyprland**, **Sway**, **i3** — recognized/supported environments (no DE/WM/compositor code bundled).
+- **[GPUIShell (gpuishell)](https://git.rond.cc/rond/gpui-shell)** (rond.cc / Andre Brandao) — external Wayland desktop shell; recognized/detected when running. Not bundled; no code copied.
+- **[Event Horizon](https://github.com/Event-Horizon-desktop-environment/Event-Horizon)** — external Wayland desktop shell/environment; recognized/detected when running. Not bundled; no code copied.
+
 Everything else in this repository is original Maidware work (or Maidware work vendored as noted above). Corrections welcome via issues/PRs.
