@@ -452,16 +452,16 @@ appimage_links() {
 
 # ---- maid suite: the updater knows about its own family ----
 # Only Maid-family repos are tracked here (Maid BT, Maidshare, Maid Watcher,
-# Maid Helper, Maid Runner), all under github.com/Maidware-Project.
-# A checkout you already have is found by its github origin (so where it sits
+# Maid Helper, Maid Runner). Primary: github.com/Maidware-Project, fallback: codeberg.org/Maidware_Project.
+# A checkout you already have is found by its origin (GitHub or Codeberg, so where it sits
 # on disk does not matter) and pulled --ff-only; one that is not on disk yet
-# is cloned from github into ~/.local/share/maid-au/suite. The Nuclear plugin
+# is cloned (tries GitHub, then Codeberg) into ~/.local/share/maid-au/suite. The Nuclear plugin
 # and the Atrim launcher are separate projects with their own releases - never
 # touch them from here. Opt out of check + pull + clone with MAID_SUITE=0.
 # Pulls are --ff-only (diverged trees are left alone and reported);
 # deploying still means rerunning each install.sh.
 #
-# MAID_SUITE_LIST overrides the family (one "Name|url" per line) - the
+# MAID_SUITE_LIST overrides the family (one "Name|url[|fallback_url]" per line) - the
 # tests use it, and so can anyone mirroring the suite elsewhere.
 maid_suite_list() {
   if [ -n "${MAID_SUITE_LIST:-}" ]; then
@@ -470,10 +470,10 @@ maid_suite_list() {
   # Maid Watcher is not published on its own - it ships inside Maid BT
   # (watcher/), so pulling Maid BT covers it.
   cat <<'LIST'
-Maid BT|https://github.com/Maidware-Project/Maid-BT.git
-Maidshare|https://github.com/Maidware-Project/Maidshare.git
-Maid Helper|https://github.com/Maidware-Project/Maid-Helper.git
-Maid Runner|https://github.com/Maidware-Project/Maid-Runner.git
+Maid BT|https://github.com/Maidware-Project/Maid-BT.git|https://codeberg.org/Maidware_Project/Maid-BT.git
+Maidshare|https://github.com/Maidware-Project/Maidshare.git|https://codeberg.org/Maidware_Project/Maidshare.git
+Maid Helper|https://github.com/Maidware-Project/Maid-Helper.git|https://codeberg.org/Maidware_Project/Maid-Helper.git
+Maid Runner|https://github.com/Maidware-Project/Maid-Runner.git|https://codeberg.org/Maidware_Project/Maid-Runner.git
 LIST
 }
 
@@ -482,18 +482,23 @@ maid_clone_root() {
 }
 
 maid_norm_url() {
-  # owner/repo form, so https and ssh remotes compare equal
+  # owner/repo form, so https/ssh and github/codeberg mirrors compare equal
   local u="${1%.git}"
   case "$u" in
-    git@github.com:*)     u="${u#git@github.com:}" ;;
-    https://github.com/*) u="${u#https://github.com/}" ;;
-    http://github.com/*)  u="${u#http://github.com/}" ;;
+    git@github.com:*)       u="${u#git@github.com:}" ;;
+    https://github.com/*)   u="${u#https://github.com/}" ;;
+    http://github.com/*)    u="${u#http://github.com/}" ;;
+    git@codeberg.org:*)     u="${u#git@codeberg.org:}" ;;
+    https://codeberg.org/*) u="${u#https://codeberg.org/}" ;;
+    http://codeberg.org/*)  u="${u#http://codeberg.org/}" ;;
   esac
+  # normalize org name differences (GitHub: Maidware-Project, Codeberg: Maidware_Project)
+  u="${u#Maidware-Project/}"; u="${u#Maidware_Project/}"
   printf '%s' "$u"
 }
 
 maid_find() {
-  # echo the checkout whose github origin matches $1, else nothing
+  # echo the checkout whose origin matches $1 (GitHub or Codeberg mirror), else nothing
   local want base d got
   want=$(maid_norm_url "$1")
   for base in "$HOME/Documents/GitHub" "$HOME/GitHub" "$HOME/Projects" \
@@ -520,10 +525,10 @@ maidsuite_check() {
   if [ "${MAID_SUITE:-1}" = "0" ]; then
     log "check: maid suite: skipped (MAID_SUITE=0)."; echo 0; return 0
   fi
-  local line name url d behind n=0
+  local line name url alt d behind n=0
   while IFS= read -r line; do
     [ -n "$line" ] || continue
-    name="${line%%|*}"; url="${line#*|}"
+    IFS='|' read -r name url alt <<<"$line"
     if d=$(maid_find "$url"); then
       behind=$(maid_behind "$d")
       if [ "${behind:-0}" -gt 0 ] 2>/dev/null; then
@@ -545,11 +550,11 @@ maidsuite_update() {
     say "maid suite: disabled (MAID_SUITE=0) - skipping."
     log "maid suite: skipped (MAID_SUITE=0)."; return 0
   fi
-  say "maid suite: enabled - pulling from github Maid BT, Maidshare, Maid Watcher, Maid Helper, Maid Runner."
-  local line name url d behind before statline c changed=0
+  say "maid suite: enabled - pulling Maid BT, Maidshare, Maid Watcher, Maid Helper, Maid Runner (GitHub, Codeberg fallback)."
+  local line name url alt d behind before statline c changed=0 cloned=0
   while IFS= read -r line; do
     [ -n "$line" ] || continue
-    name="${line%%|*}"; url="${line#*|}"
+    IFS='|' read -r name url alt <<<"$line"
     if d=$(maid_find "$url"); then
       behind=$(maid_behind "$d")
       [ "${behind:-0}" -gt 0 ] 2>/dev/null || continue
@@ -568,12 +573,17 @@ maidsuite_update() {
     else
       d="$(maid_clone_root)/$(basename "${url%.git}")"
       mkdir -p "$(dirname "$d")" 2>/dev/null || true
+      cloned=0
       if git clone --quiet "$url" "$d" >/dev/null 2>&1; then
-        log "maid suite: $name: cloned from github ($url)."
+        log "maid suite: $name: cloned ($url)."; cloned=1
+      elif [ -n "${alt:-}" ] && git clone --quiet "$alt" "$d" >/dev/null 2>&1; then
+        log "maid suite: $name: cloned from Codeberg fallback ($alt)."; cloned=1
+      else
+        log "maid suite: $name: could not clone (tried GitHub and Codeberg) - skipped."
+      fi
+      if [ "$cloned" = "1" ]; then
         changed=1
         maidsuite_deploy "$name" "$d"
-      else
-        log "maid suite: $name: could not clone ($url) - skipped."
       fi
     fi
   done < <(maid_suite_list)

@@ -30,6 +30,13 @@ if a piped run behaves oddly on your shell:
 curl -fsSL https://raw.githubusercontent.com/Maidware-Project/Maid-Suite/main/install.sh | bash
 ```
 
+**fallback (if GitHub is unavailable):**
+```sh
+bash <(curl -fsSL https://codeberg.org/Maidware_Project/Maid-Suite/raw/branch/main/install.sh)
+# or: curl -fsSL https://codeberg.org/Maidware_Project/Maid-Suite/raw/branch/main/install.sh | bash
+```
+you can also set `MAIDWARE_SOURCE=codeberg` (or `github`) to prefer a specific source.
+
 ## what it does
 
 - **install/update all** (recommended) or **selected** tools: Maid AU core, Maid Helper core, Maid Runner, Maidshare, Maid BT.
@@ -40,7 +47,9 @@ curl -fsSL https://raw.githubusercontent.com/Maidware-Project/Maid-Suite/main/in
 
 ## safety
 
-- runs each tool’s official `install.sh` from `https://raw.githubusercontent.com/Maidware-Project/<repo>/main/install.sh` (downloaded to a temp file, shown before run).
+- runs each tool’s official `install.sh` from GitHub, with automatic **Codeberg fallback** if GitHub is unavailable (downloaded to a temp file, shown before run).
+  - primary: `https://raw.githubusercontent.com/Maidware-Project/<repo>/main/install.sh`
+  - fallback: `https://codeberg.org/Maidware_Project/<repo>/raw/branch/main/install.sh`
 - **no surprise sudo in non-interactive runs:** when Suite isn’t attached to a TTY it passes `--no-packages` to child installers; run a tool with `--packages` yourself if/when you want distro packages installed.
 - review scripts before running if you prefer (open the raw URL or clone the repo). tools keep their own backups/`--check` behavior.
 
@@ -53,7 +62,7 @@ bash install.sh --tui          # menu
 bash install.sh --uninstall    # remove Suite
 ```
 
-clone-and-run: `git clone --depth 1 https://github.com/Maidware-Project/Maid-Suite.git && bash Maid-Suite/install.sh`.
+clone-and-run: `git clone --depth 1 https://github.com/Maidware-Project/Maid-Suite.git && bash Maid-Suite/install.sh` (fallback: `git clone --depth 1 https://codeberg.org/Maidware_Project/Maid-Suite.git && bash Maid-Suite/install.sh`).
 
 ## NixOS (flakes & home-manager)
 
@@ -73,6 +82,15 @@ quick try: `nix run github:Maidware-Project/Maid-Suite`. on NixOS, install the o
 ## works with the Maid suite
 
 Maid Suite *is* the suite front end. it stands alone as the canonical place to run Helper/AU core workflows and to install/update the other independent Maidware tools (Maid BT, Maid Runner, Maidshare). each tool remains independent and keeps its own installer, behavior, and credits.
+
+## links (fallback / mirror)
+- GitHub org: https://github.com/Maidware-Project
+- Codeberg org (fallback): https://codeberg.org/Maidware_Project
+- Maid BT: https://codeberg.org/Maidware_Project/Maid-BT
+- Maidshare: https://codeberg.org/Maidware_Project/Maidshare
+- Maid Runner: https://codeberg.org/Maidware_Project/Maid-Runner
+- Maid AU: https://codeberg.org/Maidware_Project/Maid-AU
+- Maid Helper: https://codeberg.org/Maidware_Project/Maid-Helper
 
 ## License
 

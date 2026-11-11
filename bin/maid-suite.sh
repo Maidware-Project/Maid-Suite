@@ -4,6 +4,34 @@
 set -u
 
 RAW_BASE="https://raw.githubusercontent.com/Maidware-Project"
+RAW_BASE_CODEBERG="https://codeberg.org/Maidware_Project"
+MAIDWARE_SOURCE="${MAIDWARE_SOURCE:-auto}" # auto|github|codeberg
+
+fetch_to() { # url tmpfile -> 0 on success
+  curl -fsSL "$1" -o "$2" 2>/dev/null
+}
+
+fetch_any() { # tmpfile url... -> 0 on success (tries in order)
+  local out="$1"; shift
+  local u
+  for u in "$@"; do
+    [ -n "$u" ] || continue
+    fetch_to "$u" "$out" && return 0
+  done
+  return 1
+}
+
+fetch_with_fallback() { # repo_path tmpfile -> 0 on success (tries GitHub then Codeberg, or per MAIDWARE_SOURCE)
+  local path="$1" out="$2"
+  case "$MAIDWARE_SOURCE" in
+    codeberg)
+      fetch_to "$RAW_BASE_CODEBERG/$path" "$out" ;;
+    github)
+      fetch_to "$RAW_BASE/$path" "$out" ;;
+    *)
+      fetch_to "$RAW_BASE/$path" "$out" || fetch_to "$RAW_BASE_CODEBERG/$path" "$out" ;;
+  esac
+}
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 # embedded cores (self-contained in Suite): prefer these over system copies
 for _lx in "$HERE/../libexec" "$HOME/.local/share/maid-suite/libexec"; do
@@ -194,13 +222,29 @@ installer_url_for_repo() {
 run_installer() {
   local repo="$1" label="$2" mode="$3" # mode: install|update (informational)
   if is_nixos; then nixos_install_hint "$repo" "$label"; return 0; fi
-  local url; url="$(installer_url_for_repo "$repo")"
+  local tag gh_url gh_main cb_main cb_tag
+  tag="$(latest_release_tag "$repo")"
+  gh_main="$RAW_BASE/$repo/main/install.sh"
+  cb_main="$RAW_BASE_CODEBERG/$repo/raw/branch/main/install.sh"
+  if [ -n "$tag" ]; then
+    gh_url="$RAW_BASE/$repo/$tag/install.sh"
+    cb_tag="$RAW_BASE_CODEBERG/$repo/raw/tag/$tag/install.sh"
+  else
+    gh_url="$gh_main"; cb_tag=""
+  fi
   say "$mode: $label (official installer)"
-  printf '    %s\n' "$url"
+  printf '    %s\n' "$gh_url"
+  [ "$MAIDWARE_SOURCE" != "codeberg" ] && printf '    %bfallback%b %s\n' "$D" "$R" "$cb_main"
   if ! command -v curl >/dev/null 2>&1; then warn "curl not found; cannot fetch $label"; return 1; fi
   local tmp; tmp="$(mktemp /tmp/maid-suite.XXXXXX.sh)"
-  if ! curl -fsSL "$url" -o "$tmp"; then
-    warn "fetch failed for $label ($url)"; rm -f "$tmp"; return 1
+  local ok_fetch=1
+  case "$MAIDWARE_SOURCE" in
+    codeberg) fetch_any "$tmp" "$cb_tag" "$cb_main" || ok_fetch=0 ;;
+    github)   fetch_any "$tmp" "$gh_url" "$gh_main" || ok_fetch=0 ;;
+    *)        fetch_any "$tmp" "$gh_url" "$gh_main" "$cb_tag" "$cb_main" || ok_fetch=0 ;;
+  esac
+  if [ "$ok_fetch" -ne 1 ]; then
+    warn "fetch failed for $label (tried GitHub and Codeberg)"; rm -f "$tmp"; return 1
   fi
   # In a non-interactive Suite session, avoid surprise sudo: pass
   # --no-packages so the child stays safe (you can rerun it with
@@ -227,11 +271,13 @@ do_install() { # $1 = install|update
 suite_installer_url() { installer_url_for_repo "Maid-Suite"; }
 
 run_suite_installer() { # extra args...
-  local url; url="$(suite_installer_url)"
+  local path="Maid-Suite/main/install.sh"
+  local url="$RAW_BASE/$path" url_cb="$RAW_BASE_CODEBERG/$path"
   say "Maid Suite installer (official, HTTPS): $url"
+  [ "$MAIDWARE_SOURCE" != "codeberg" ] && printf '    %bfallback%b %s\n' "$D" "$R" "$url_cb"
   if ! command -v curl >/dev/null 2>&1; then warn "curl not found"; return 1; fi
   local tmp; tmp="$(mktemp /tmp/maid-suite-self.XXXXXX.sh)"
-  if ! curl -fsSL "$url" -o "$tmp"; then warn "fetch failed"; rm -f "$tmp"; return 1; fi
+  if ! fetch_with_fallback "$path" "$tmp"; then warn "fetch failed (tried GitHub and Codeberg)"; rm -f "$tmp"; return 1; fi
   bash "$tmp" "$@"
   local rc=$?; rm -f "$tmp"; return "$rc"
 }
