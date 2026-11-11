@@ -37,6 +37,13 @@ bash <(curl -fsSL https://codeberg.org/Maidware_Project/Maid-Suite/raw/branch/ma
 ```
 you can also set `MAIDWARE_SOURCE=codeberg` (or `github`) to prefer a specific source.
 
+## currently supported
+
+- **Desktop environments:** KDE Plasma (supported, with KDE-specific integrations where applicable), GNOME, XFCE, MATE, Cinnamon, LXQt
+- **Window managers / compositors:** Hyprland, Sway, i3
+- **Desktop shells / environments:** <!-- # this is truly my power --> [Event Horizon](https://github.com/Event-Horizon-desktop-environment/Event-Horizon) is recognized/detected
+- **Core:** TUI/GUI and embedded Helper/AU workflows run broadly; doctor/status and installers report detected session/DE/WM. Plasma-specific widgets (e.g. Maid BT applet) remain KDE-only.
+
 ## what it does
 
 - **install/update all** (recommended) or **selected** tools: Maid AU core, Maid Helper core, Maid Runner, Maidshare, Maid BT.

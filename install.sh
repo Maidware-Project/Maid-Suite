@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# this is truly my power
 # Maid Suite installer - orchestrator for the Maidware toolset.
 # Usage: ./install.sh [--check] [--uninstall] [--tui]
 # Piped install: bash <(curl -fsSL https://raw.githubusercontent.com/Maidware-Project/Maid-Suite/main/install.sh)
@@ -60,6 +61,38 @@ APPS="$HOME/.local/share/applications"
 mkdir -p "$BINDIR" "$SHARE" "$APPS"
 
 say() { echo "==> $*"; }
+session_env_line() {
+  local de="${XDG_CURRENT_DESKTOP:-}" sess="${XDG_SESSION_DESKTOP:-}" dses="${DESKTOP_SESSION:-}"
+  local label="unknown"
+  case "$de $sess $dses" in
+    *[Pp]lasma*|*[Kk][Dd][Ee]*) label="KDE Plasma" ;;
+    *[Gg][Nn][Oo][Mm][Ee]*) label="GNOME" ;;
+    *[Xx][Ff][Cc][Ee]*) label="XFCE" ;;
+    *[Mm][Aa][Tt][Ee]*) label="MATE" ;;
+    *[Cc]innamon*) label="Cinnamon" ;;
+    *[Ll][Xx][Qq]t*) label="LXQt" ;;
+    *[Hh]yprland*) label="Hyprland" ;;
+    *[Ss]way*) label="Sway" ;;
+    *[Ii]3*) label="i3" ;;
+    *) [ -n "${de:-}${sess:-}${dses:-}" ] && label="$de" || label="unknown" ;;
+  esac
+  if command -v pgrep >/dev/null 2>&1; then
+    pgrep -x gpuishell >/dev/null 2>&1 && label="$label (+ GPUIShell/gpuishell)"
+    pgrep -x horizon >/dev/null 2>&1 && label="$label (+ Event Horizon)"
+  fi
+  echo "Session: $label | XDG_CURRENT_DESKTOP=${de:-n/a} | DESKTOP_SESSION=${dses:-n/a} | WAYLAND=${WAYLAND_DISPLAY:+yes}${WAYLAND_DISPLAY:-no} | X11=${DISPLAY:+yes}${DISPLAY:-no}"
+}
+distro_env_line() {
+  if [ -r /etc/os-release ]; then
+    # shellcheck disable=SC1091
+    . /etc/os-release
+    echo "Distro: ${PRETTY_NAME:-${NAME:-unknown}} (id=${ID:-?}${ID_LIKE:+ like=${ID_LIKE}})"
+  elif [ "$(uname -s 2>/dev/null)" = "Linux" ]; then
+    echo "Distro: Linux (unidentified)"
+  else
+    echo "Distro: $(uname -s 2>/dev/null || echo unknown)"
+  fi
+}
 
 if [ "$UNINST" = "1" ]; then
   [ "$CHECK" = "1" ] && { echo "would remove $BINDIR/maid-suite $SHARE $APPS/maid-suite.desktop"; exit 0; }
@@ -89,6 +122,8 @@ fi
 [ -d "$PKGDIR/gui" ] && cp -rf "$PKGDIR/gui/." "$SHARE/gui/" 2>/dev/null || true
 cp -f "$PKGDIR/README.md" "$PKGDIR/CHANGELOG.md" "$SHARE/" 2>/dev/null || true
 [ -d "$PKGDIR/docs" ] && cp -rf "$PKGDIR/docs" "$SHARE/" 2>/dev/null || true
+say "$(session_env_line)"
+say "$(distro_env_line)"
 say "installed maid-suite (TUI) + maid-suite-gui (native Qt/KDE Plasma GUI) -> $BINDIR"
 say "app menu entry -> $APPS/maid-suite.desktop"
 say "launch: maid-suite   (unified install/update/status for the Maidware tools)"
