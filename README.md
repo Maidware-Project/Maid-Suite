@@ -86,11 +86,12 @@ Maid Suite *is* the suite front end. it stands alone as the canonical place to r
 ## links (fallback / mirror)
 - GitHub org: https://github.com/Maidware-Project
 - Codeberg org (fallback): https://codeberg.org/Maidware_Project
-- Maid BT: https://codeberg.org/Maidware_Project/Maid-BT
-- Maidshare: https://codeberg.org/Maidware_Project/Maidshare
-- Maid Runner: https://codeberg.org/Maidware_Project/Maid-Runner
-- Maid AU: https://codeberg.org/Maidware_Project/Maid-AU
-- Maid Helper: https://codeberg.org/Maidware_Project/Maid-Helper
+- Maid BT: https://github.com/Maidware-Project/Maid-BT · https://codeberg.org/Maidware_Project/Maid-BT
+- Maidshare: https://github.com/Maidware-Project/Maidshare · https://codeberg.org/Maidware_Project/Maidshare
+- Maid Runner: https://github.com/Maidware-Project/Maid-Runner · https://codeberg.org/Maidware_Project/Maid-Runner
+- Maid Suite: https://github.com/Maidware-Project/Maid-Suite · https://codeberg.org/Maidware_Project/Maid-Suite
+- Maid AU (archived, GitHub only): https://github.com/Maidware-Project/Maid-AU
+- Maid Helper (archived, GitHub only): https://github.com/Maidware-Project/Maid-Helper
 
 ## License
 

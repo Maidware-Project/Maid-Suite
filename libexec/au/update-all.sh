@@ -472,7 +472,7 @@ maid_suite_list() {
   cat <<'LIST'
 Maid BT|https://github.com/Maidware-Project/Maid-BT.git|https://codeberg.org/Maidware_Project/Maid-BT.git
 Maidshare|https://github.com/Maidware-Project/Maidshare.git|https://codeberg.org/Maidware_Project/Maidshare.git
-Maid Helper|https://github.com/Maidware-Project/Maid-Helper.git|https://codeberg.org/Maidware_Project/Maid-Helper.git
+Maid Helper|https://github.com/Maidware-Project/Maid-Helper.git
 Maid Runner|https://github.com/Maidware-Project/Maid-Runner.git|https://codeberg.org/Maidware_Project/Maid-Runner.git
 LIST
 }
