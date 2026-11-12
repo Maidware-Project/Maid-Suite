@@ -20,11 +20,17 @@ if [ -x "$HOME/.local/bin/bluetooth-toggle.sh" ]; then
   if grep -q '^BUDS_MAC="\(AA:BB:CC:DD:EE:FF\)\?"' "$HOME/.config/bluetooth-buds.conf" 2>/dev/null; then
     miss "Maid BT installed but no earbuds MAC configured" \
       "bash ~/Documents/GitHub/Maid\\ BT/install.sh  # prompts for MAC"
-  elif systemctl --user is-active buds-fallback.service >/dev/null 2>&1; then
+  elif (have systemctl && systemctl --user is-active buds-fallback.service >/dev/null 2>&1) \
+    || pgrep -f 'buds-fallback\.sh' >/dev/null 2>&1; then
     echo "ok - Maid BT installed, configured, watcher running"
   else
-    miss "Maid BT watcher not running" \
-      "systemctl --user enable --now buds-fallback.service"
+    if have systemctl; then
+      miss "Maid BT watcher not running" \
+        "systemctl --user enable --now buds-fallback.service"
+    else
+      miss "Maid BT watcher not running" \
+        "start buds-fallback.sh with your init/session manager (see Maid-BT contrib/init docs if available)"
+    fi
   fi
 else
   miss "Maid BT not installed" "cd ~/Documents/GitHub/Maid\\ BT && bash install.sh"
