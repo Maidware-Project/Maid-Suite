@@ -20,12 +20,14 @@ detect_pm() {
       *debian*|*ubuntu*|*linuxmint*) echo apt; return ;;
       *fedora*|*rhel*|*centos*|*rocky*|*alma*) echo dnf; return ;;
       *suse*|*opensuse*) echo zypper; return ;;
+      *void*) echo xbps; return ;;
     esac
   fi
-  for c in pacman apt-get dnf zypper; do
+  for c in pacman xbps-install apt-get dnf zypper; do
     if command -v "$c" >/dev/null 2>&1; then
       case "$c" in
         pacman) echo pacman; return ;;
+        xbps-install) echo xbps; return ;;
         apt-get) echo apt; return ;;
         dnf) echo dnf; return ;;
         zypper) echo zypper; return ;;
@@ -63,6 +65,7 @@ install_pkgs() {
   [ "$#" -gt 0 ] || return 0
   case "$pm" in
     pacman) sudo pacman -S --needed --noconfirm "$@" ;;
+    xbps) sudo xbps-install -Sy "$@" ;;
     apt) sudo apt-get update && sudo apt-get install -y "$@" ;;
     dnf) sudo dnf install -y "$@" ;;
     zypper) sudo zypper --non-interactive install "$@" ;;
@@ -83,6 +86,7 @@ pkg_present() {
   # $1 = bare package name; true if the distro's db knows it installed
   case "$(detect_pm)" in
     pacman) pacman -Q "$1" >/dev/null 2>&1 ;;
+    xbps) xbps-query "$1" >/dev/null 2>&1 ;;
     apt) dpkg -s "$1" >/dev/null 2>&1 ;;
     dnf) rpm -q "$1" >/dev/null 2>&1 ;;
     zypper) rpm -q "$1" >/dev/null 2>&1 ;;

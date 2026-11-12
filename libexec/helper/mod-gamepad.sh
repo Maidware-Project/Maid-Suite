@@ -74,6 +74,11 @@ case "$PM" in
     echo "  Debian/Ubuntu: xpadneo-dkms exists in some releases - try: sudo apt install xpadneo-dkms"
     exit 2
     ;;
+  xbps)
+    echo "  Void Linux: Steam Input covers most pads; driver packages vary by kernel/setup"
+    echo "  check oco (Void Community Repository) for extra controller packages: https://codeberg.org/oSoWoSo/oco (https://repo.osowoso.org)"
+    exit 2
+    ;;
   *) echo "unsupported distro for gamepads"; exit 1 ;;
 esac
 echo "ok - gamepad packages attempted (replug pad / reboot for kernel modules, then test in Steam)"

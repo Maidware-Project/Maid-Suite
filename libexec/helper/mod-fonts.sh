@@ -40,6 +40,10 @@ case "$PM" in
     install_pkgs apt fonts-noto-core fonts-noto-cjk fonts-noto-color-emoji || true
     echo "note: MS fonts need a EULA click-through: sudo apt install ttf-mscorefonts-installer"
     ;;
+  xbps)
+    install_pkgs xbps noto-fonts-emoji noto-fonts-cjk || true
+    echo "note: Void Linux - additional fonts may be available via oco: https://codeberg.org/oSoWoSo/oco"
+    ;;
   *) echo "unsupported distro for fonts"; exit 1 ;;
 esac
 

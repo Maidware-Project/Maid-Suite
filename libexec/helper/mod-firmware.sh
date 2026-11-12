@@ -31,6 +31,7 @@ case "$PM" in
   dnf) install_pkgs dnf fwupd || exit 1 ;;
   pacman) install_pkgs pacman fwupd || exit 1 ;;
   apt) install_pkgs apt fwupd || exit 1 ;;
+  xbps) install_pkgs xbps fwupd || exit 1 ;;
   *) echo "unsupported distro for firmware"; exit 1 ;;
 esac
 if fw_ok; then

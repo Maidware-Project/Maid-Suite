@@ -37,6 +37,7 @@ elif ! have nvidia-smi; then
     dnf) install_pkgs dnf pciutils || exit 1 ;;
     pacman) install_pkgs pacman pciutils || exit 1 ;;
     apt) install_pkgs apt pciutils || exit 1 ;;
+    xbps) install_pkgs xbps pciutils || exit 1 ;;
     *) echo "unsupported distro"; exit 1 ;;
   esac
   exit 2  # rerun to detect with lspci present
@@ -48,6 +49,7 @@ if [ "$have_nvidia" = "0" ] && [ "$have_amd" = "0" ]; then
     exit 0
   fi
 fi
+  # no content change; placeholder edit skipped? better do real edits below
 
 driver_of() {
   # $1 = grep pattern for the device line; echo "Kernel driver in use" value
@@ -84,6 +86,7 @@ if [ "$have_nvidia" = "1" ]; then
         fi
         case "$PM" in
           zypper|dnf) sudo dracut -f 2>&1 | tail -n 1 || true ;;
+          xbps) sudo dracut -f 2>&1 | tail -n 1 || sudo xbps-reconfigure -f linux 2>&1 | tail -n 2 || true ;;
           pacman) sudo mkinitcpio -P 2>&1 | tail -n 2 || true ;;
           apt) sudo update-initramfs -u 2>&1 | tail -n 1 || true ;;
         esac
@@ -109,6 +112,7 @@ if [ "$have_amd" = "1" ]; then
       dnf) pkg_present linux-firmware || fw_ok=0 ;;
       pacman) pkg_present linux-firmware || fw_ok=0 ;;
       apt) pkg_present firmware-amd-graphics || fw_ok=0 ;;
+      xbps) pkg_present linux-firmware-amd || pkg_present linux-firmware || fw_ok=0 ;;
     esac
     ls "$VK_DIR"/*radeon* >/dev/null 2>&1 || ls "$VK_DIR"/*amd* >/dev/null 2>&1 || vk_ok=0
     if [ "$fw_ok" = "1" ] && [ "$vk_ok" = "1" ]; then
@@ -122,6 +126,7 @@ if [ "$have_amd" = "1" ]; then
           dnf) install_pkgs dnf linux-firmware mesa-vulkan-drivers || true ;;
           pacman) install_pkgs pacman linux-firmware vulkan-radeon || true ;;
           apt) install_pkgs apt firmware-amd-graphics mesa-vulkan-drivers || true ;;
+          xbps) install_pkgs xbps linux-firmware-amd mesa-vulkan-radeon || true ;;
         esac
         echo "reboot if firmware was just installed, then rerun --check"
       fi

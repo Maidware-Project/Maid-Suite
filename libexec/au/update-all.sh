@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # One-button system updater: flatpak + native packages + firmware.
-# Backends in pm-*.sh (zypper/dnf/pacman/apt), auto-detected, override with UPDATE_PM.
+# Backends in pm-*.sh (zypper/dnf/pacman/apt/xbps), auto-detected, override with UPDATE_PM.
 LOG="$HOME/.local/share/update-all.log"
 LASTFILE="$HOME/.local/share/update-all.last"
 STALE_DAYS=3
@@ -145,14 +145,16 @@ detect_pm() {
     . /etc/os-release
     case "${ID:-} ${ID_LIKE:-}" in
       *arch*) echo pacman; return ;;
-      *debian*|*ubuntu*) echo apt; return ;;
-      *fedora*|*rhel*|*centos*) echo dnf; return ;;
-      *suse*) echo zypper; return ;;
+      *debian*|*ubuntu*|*linuxmint*) echo apt; return ;;
+      *fedora*|*rhel*|*centos*|*rocky*|*alma*) echo dnf; return ;;
+      *suse*|*opensuse*) echo zypper; return ;;
+      *void*) echo xbps; return ;;
     esac
   fi
-  for c in pacman apt-get dnf zypper; do
+  for c in pacman xbps-install apt-get dnf zypper; do
     command -v "$c" >/dev/null 2>&1 && { case "$c" in
       pacman) echo pacman; return ;;
+      xbps-install) echo xbps; return ;;
       apt-get) echo apt; return ;;
       dnf) echo dnf; return ;;
       zypper) echo zypper; return ;; esac; }

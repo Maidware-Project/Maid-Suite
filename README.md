@@ -42,7 +42,10 @@ you can also set `MAIDWARE_SOURCE=codeberg` (or `github`) to prefer a specific s
 - **Desktop environments:** KDE Plasma (supported, with KDE-specific integrations where applicable), GNOME, XFCE, MATE, Cinnamon, LXQt
 - **Window managers / compositors:** Hyprland, Sway, i3
 - **Desktop shells / environments:** <!-- # this is truly my power --> [Event Horizon](https://github.com/Event-Horizon-desktop-environment/Event-Horizon) is recognized/detected
+- **Distributions / package managers:** Arch/CachyOS/EndeavourOS/Manjaro/Garuda (pacman), Debian/Ubuntu/Mint/Pop!_OS/PikaOS (apt), Fedora/RHEL-like (dnf), openSUSE (zypper), Void Linux (xbps). Helper/AU modules provide best-effort package actions per detected distro/family.
 - **Core:** TUI/GUI and embedded Helper/AU workflows run broadly; doctor/status and installers report detected session/DE/WM. Plasma-specific widgets (e.g. Maid BT applet) remain KDE-only.
+
+**Void Linux:** Maid Suite Helper/AU support xbps-based workflows; [oco (Void Community Repository)](https://codeberg.org/oSoWoSo/oco) (`https://repo.osowoso.org`) can provide additional community packages/templates.
 
 ## what it does
 

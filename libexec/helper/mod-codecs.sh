@@ -58,6 +58,10 @@ case "$PM" in
     echo "  sudo apt install ubuntu-restricted-extras   # Debian/Ubuntu"
     echo "  sudo apt install mint-meta-codecs           # Linux Mint"
     ;;
+  xbps)
+    install_pkgs xbps ffmpeg gst-plugins-good1 gst-plugins-bad1 gst-plugins-ugly1 gst-libav || true
+    echo "note: Void Linux - oco (Void Community Repository) may provide extra packages: https://codeberg.org/oSoWoSo/oco (https://repo.osowoso.org)"
+    ;;
   *) echo "unsupported distro for codecs"; exit 1 ;;
 esac
 
@@ -104,6 +108,10 @@ if have pactl && pactl list short cards 2>/dev/null | grep -qi bluez; then
       apt)
         install_pkgs apt libldacbt-enc2 libfreeaptx0 libfdk-aac2 || true
         echo "note: libfdk-aac2 needs non-free enabled"
+        ;;
+      xbps)
+        install_pkgs xbps libldac libfreeaptx || true
+        echo "note: Void Linux bluetooth codec packages vary; check oco if needed: https://codeberg.org/oSoWoSo/oco"
         ;;
     esac
     echo "restart audio to re-enumerate codecs:"

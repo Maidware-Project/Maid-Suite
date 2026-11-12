@@ -41,6 +41,7 @@ case "$PM" in
   dnf) install_pkgs dnf cups cups-filters avahi || true ;;
   pacman) install_pkgs pacman cups cups-filters avahi || true ;;
   apt) install_pkgs apt cups cups-filters avahi-daemon || true ;;
+  xbps) install_pkgs xbps cups cups-filters avahi || true ;;
   *) echo "unsupported distro for printing"; exit 1 ;;
 esac
 sudo systemctl enable --now cups.service 2>&1 | tail -n 1 || true

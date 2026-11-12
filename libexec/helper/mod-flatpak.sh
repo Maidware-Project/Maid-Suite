@@ -32,6 +32,7 @@ if ! have flatpak; then
     dnf) install_pkgs dnf flatpak || exit 1 ;;
     pacman) install_pkgs pacman flatpak || exit 1 ;;
     apt) install_pkgs apt flatpak || exit 1 ;;
+    xbps) install_pkgs xbps flatpak || exit 1 ;;
     *) echo "unsupported distro for flatpak"; exit 1 ;;
   esac
 fi

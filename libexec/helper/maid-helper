@@ -55,7 +55,10 @@ if [ "$QUALITY" = "1" ]; then
 fi
 
 PM=$(detect_pm)
-[ "$PM" = "none" ] && { echo "unsupported distro (need pacman/apt/dnf/zypper)"; exit 2; }
+[ "$PM" = "none" ] && { echo "unsupported distro (need pacman/xbps/apt/dnf/zypper)"; exit 2; }
+if [ "$PM" = "xbps" ]; then
+  echo "Void Linux (xbps) detected - oco (Void Community Repository): https://codeberg.org/oSoWoSo/oco (https://repo.osowoso.org)"
+fi
 export PM BINDIR
 export MSFONTS="${MSFONTS:-0}"
 
