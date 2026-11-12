@@ -366,6 +366,7 @@ compositor_doctor() {
   if command -v pgrep >/dev/null 2>&1; then
     pgrep -x gpuishell >/dev/null 2>&1 && ok "GPUIShell (gpuishell, rond.cc/gpui-shell) detected (supported)"
     pgrep -x horizon >/dev/null 2>&1 && ok "Event Horizon desktop environment detected (supported)"
+    pgrep -x kineticwe >/dev/null 2>&1 && ok "KineticWE compositor/session detected (supported)"
   fi
   case "${de,,}" in
     *plasma*|*kde*) ok "KDE Plasma: supported path for KDE-specific features (widgets/plasmoids)" ;;
@@ -380,7 +381,7 @@ compositor_doctor() {
     *) printf '  %b..%b other/unknown session: core CLI/TUI expected to work; desktop integration varies\n' "$D" "$R" ;;
   esac
   if [ -r /etc/os-release ]; then . /etc/os-release; printf '  distro: %s (id=%s)\n' "${PRETTY_NAME:-${NAME:-unknown}}" "${ID:-?}${ID_LIKE:+ like=${ID_LIKE}}"; fi
-  say "Maid BT: Plasma plasmoid is KDE-only; CLI (bluetooth-toggle, maid-switch) works broadly. Maid Runner: Qt app (needs display). GPUIShell and Event Horizon environments are recognized."
+  say "Maid BT: Plasma plasmoid is KDE-only; CLI (bluetooth-toggle, maid-switch) works broadly. Maid Runner: Qt app (needs display). GPUIShell, Event Horizon, and KineticWE environments are recognized."
 }
 
 run_if_present() { # cmd label (fallback helper)
@@ -465,7 +466,7 @@ while true; do
       echo
       say "One place for Helper + AU core workflows (embedded, self-contained) + install/update of the whole Maidware set."
       say "KDE Plasma / desktops: installer adds a menu entry (maid-suite.desktop). Launch from your app menu or run: maid-suite"
-      say "Compositor/DE support: session detection + doctor recognize KDE Plasma, GNOME, XFCE, MATE, Cinnamon, LXQt, Hyprland, Sway, i3, plus GPUIShell (gpuishell, rond.cc/gpui-shell) and Event Horizon environments. Core CLI/TUI work broadly; Plasma-specific widgets/integrations are KDE-only. Phone: read-only ADB discovery + explicit-consent adb connect helper shipped; deeper integration is iterative and security-first."
+      say "Compositor/DE support: session detection + doctor recognize KDE Plasma, GNOME, XFCE, MATE, Cinnamon, LXQt, Hyprland, Sway, i3, plus GPUIShell (gpuishell, rond.cc/gpui-shell), Event Horizon, and KineticWE environments. Core CLI/TUI work broadly; Plasma-specific widgets/integrations are KDE-only. Phone: read-only ADB discovery + explicit-consent adb connect helper shipped; deeper integration is iterative and security-first."
       say "Safe: embedded cores run locally; other tools use official installers fetched over HTTPS (URLs shown). Non-interactive runs pass --no-packages to child installers."
       back_to_menu ;;
     q|Q|quit|exit|"") echo "  bye!"; exit 0 ;;
